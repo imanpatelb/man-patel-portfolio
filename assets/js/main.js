@@ -181,9 +181,28 @@
       return 0;
     }
     var soonView = $("soonView"), chartboxEl = $("chartbox"), statgridEl = $("statgrid"), bignumEl = document.querySelector(".bignum"), trMetaEl = $("trMeta");
+    var endpt = $("endpt"), endring = $("endring");
     var MOY = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     function monthYear(s) { var d = parseISO(s); return MOY[d.getMonth()] + " " + d.getFullYear(); }
     function metaItem(k, v) { return '<span><span class="mk">' + k + '</span><span class="mv">' + v + '</span></span>'; }
+
+    // smoothly roll a numeric element from its previous value to the new one
+    var lastVal = new WeakMap();
+    function tnum(elm, to, fmt) {
+      if (REDUCE || !lastVal.has(elm)) { elm.textContent = fmt(to); lastVal.set(elm, to); return; }
+      var from = lastVal.get(elm); lastVal.set(elm, to);
+      if (from === to) { elm.textContent = fmt(to); return; }
+      var t0 = null, dur = 520;
+      function step(t) {
+        if (!t0) t0 = t;
+        var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        elm.textContent = fmt(from + (to - from) * e);
+        if (k < 1 && lastVal.get(elm) === to) requestAnimationFrame(step); else elm.textContent = fmt(to);
+      }
+      requestAnimationFrame(step);
+    }
+    var f2 = function (v) { return v.toFixed(2); };
+    var fwin = function (v) { return (v * 100).toFixed(1) + "%"; };
     function render(animate) {
       var full = DATA[state.k];
 
@@ -207,11 +226,15 @@
       var d = "M" + pts.join(" L"); line.setAttribute("d", d); area.setAttribute("d", d + " L" + W0 + "," + H + " L0," + H + " Z");
       $("d0").textContent = fdate(dates[0]);
       $("d1").textContent = fdate(dates[dates.length - 1]);
+      // live pulse at the latest point
+      var lx = px(nn - 1, nn), ly = py(eq[eq.length - 1]);
+      endpt.setAttribute("cx", lx); endpt.setAttribute("cy", ly); endpt.style.opacity = "1";
+      endring.setAttribute("cx", lx); endring.setAttribute("cy", ly); endring.style.opacity = "1";
 
       // big number: current quote + return over the visible window
       var winRet = eq[eq.length - 1] / eq[0] - 1;
-      $("bVal").textContent = quoteFmt(eq[eq.length - 1]);
-      var rv = $("bRet"); rv.textContent = pct(winRet); rv.className = "ret tnum " + (winRet >= 0 ? "pos" : "neg");
+      tnum($("bVal"), eq[eq.length - 1], quoteFmt);
+      var rv = $("bRet"); rv.className = "ret tnum " + (winRet >= 0 ? "pos" : "neg"); tnum(rv, winRet, pct);
       var ctxBits = [];
       if (!full.real && !full.combined) ctxBits.push("illustrative");
       ctxBits.push(state.t === "ALL" ? "since inception" : "over " + state.t);
@@ -234,14 +257,14 @@
 
       // stat grid: canonical full-period stats (exact for real books)
       var s = bookStats(state.k);
-      var rr = $("sRet"); rr.textContent = pct(s.tot); rr.className = "v tnum " + (s.tot >= 0 ? "pos" : "neg");
-      $("sDD").textContent = pctp(s.mdd);
-      $("sSh").textContent = s.sh.toFixed(2);
-      $("sSo").textContent = s.so.toFixed(2);
-      $("sVo").textContent = pctp(s.vo);
-      $("sBest").textContent = pct(s.best);
-      $("sWorst").textContent = pct(s.worst);
-      $("sWin").textContent = (s.win * 100).toFixed(1) + "%";
+      var rr = $("sRet"); rr.className = "v tnum " + (s.tot >= 0 ? "pos" : "neg"); tnum(rr, s.tot, pct);
+      tnum($("sDD"), s.mdd, pctp);
+      tnum($("sSh"), s.sh, f2);
+      tnum($("sSo"), s.so, f2);
+      tnum($("sVo"), s.vo, pctp);
+      tnum($("sBest"), s.best, pct);
+      tnum($("sWorst"), s.worst, pct);
+      tnum($("sWin"), s.win, fwin);
 
       // badges
       var liveLabel = $("liveLabel"), dataBadge = $("dataBadge");
