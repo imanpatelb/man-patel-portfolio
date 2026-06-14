@@ -1,0 +1,45 @@
+{
+  "_README": "REAL DATA GOES HERE. For each portfolio, paste your real equity curve into `series` as an array of { \"d\": \"YYYY-MM-DD\", \"v\": equityValueInUSD }. While `series` is empty, the site shows a clearly-labelled illustrative curve. As soon as a portfolio has 2+ real points, the site automatically switches that book to real data and drops the 'illustrative' badge. The 'darwinexUrl' is the public proof link shown on each strategy.",
+  "config": {
+    "name": "Man Patel",
+    "tagline": "Systematic Trader",
+    "contactEmail": "mptraderx.capital@gmail.com",
+    "inceptionDate": "2025-04-28",
+    "x": "",
+    "linkedin": "",
+    "siteUrl": "https://manpatel.vercel.app"
+  },
+  "portfolios": [
+    {
+      "key": "KBAD",
+      "strat": "Index breakout",
+      "darwinexUrl": "https://www.darwinexzero.com/darwin/KBAD/strategy-analysis",
+      "base": 7000,
+      "gen": { "seed": 7, "drift": 0.00092, "vol": 0.0072 },
+      "series": []
+    },
+    {
+      "key": "WMSN",
+      "strat": "Mean reversion",
+      "darwinexUrl": "https://www.darwinexzero.com/darwin/WMSN/strategy-analysis",
+      "base": 6500,
+      "gen": { "seed": 10, "drift": 0.00066, "vol": 0.0085 },
+      "series": []
+    },
+    {
+      "key": "ASGU",
+      "strat": "Trend / carry",
+      "darwinexUrl": "https://www.darwinexzero.com/darwin/ASGU/strategy-analysis",
+      "base": 4700,
+      "gen": { "seed": 7, "drift": 0.00046, "vol": 0.0055 },
+      "series": []
+    }
+  ],
+  "notes": [
+    { "n": "012", "date": "12 Jun 26", "tag": "risk", "title": "Why I cap risk per programme, not per trade" },
+    { "n": "011", "date": "9 Jun 26", "tag": "process", "title": "What a 9% drawdown actually feels like" },
+    { "n": "010", "date": "5 Jun 26", "tag": "process", "title": "Three books, one risk budget" },
+    { "n": "009", "date": "31 May 26", "tag": "markets", "title": "Range days and the cost of patience" },
+    { "n": "008", "date": "24 May 26", "tag": "risk", "title": "Sizing with volatility, not conviction" }
+  ]
+}

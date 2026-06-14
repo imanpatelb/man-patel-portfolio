@@ -1,0 +1,15 @@
+{
+  "name": "man-patel-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Editorial portfolio site for a systematic trader — track record, approach, and enquiries.",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "npx serve .",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
