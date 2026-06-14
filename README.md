@@ -163,3 +163,4 @@ This site presents a personal track record. It is not a solicitation or an offer
 to invest, and the footer carries the appropriate disclosures. Performance is
 shown gross of fees in USD. Keep the data accurate and the Darwinex proof links
 live so every figure is independently verifiable.
+
