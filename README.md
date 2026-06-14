@@ -60,9 +60,9 @@ into `series` as `{ "d": "YYYY-MM-DD", "v": equityInUSD }`:
   "strat": "Index breakout",
   "darwinexUrl": "https://www.darwinexzero.com/darwin/KBAD/strategy-analysis",
   "series": [
-    { "d": "2025-04-28", "v": 7000 },
-    { "d": "2025-05-30", "v": 7240 },
-    { "d": "2025-06-30", "v": 7510 }
+    { "d": "2026-01-05", "v": 7000 },
+    { "d": "2026-02-27", "v": 7240 },
+    { "d": "2026-03-31", "v": 7510 }
   ]
 }
 ```
@@ -127,6 +127,35 @@ the `<link rel="canonical">` / OG URLs in `index.html`, `robots.txt`, and
 `sitemap.xml`.
 
 ---
+
+## 5. Blog posts (admin) + comments
+
+**Posts** are written from a password-protected page at **`/admin`** and stored in
+a free database (Upstash Redis via Vercel). They render in the **Notes** section;
+clicking one opens the full post with a comment thread.
+
+**One-time setup:**
+1. **Database:** Vercel dashboard → your project → **Storage → Create Database →
+   Upstash (Redis/KV) → Connect**. This auto-adds `KV_REST_API_URL` and
+   `KV_REST_API_TOKEN` to the project.
+2. **Admin password:** already set as the `ADMIN_PASSWORD` env var (change it in
+   **Settings → Environment Variables** anytime).
+3. **Redeploy.** Then go to `/admin`, log in, and publish. Posts appear instantly
+   in Notes. Until the database is connected, the site shows the static sample notes.
+
+**Comments (Giscus / GitHub):** readers comment by signing in with GitHub.
+1. Push this repo to GitHub and make it **public**.
+2. Repo **Settings → General → Features → enable Discussions**.
+3. Install the **giscus** app: <https://github.com/apps/giscus> (grant it this repo).
+4. Go to <https://giscus.app>, enter your repo, choose a Discussion category
+   (e.g. *Announcements*), and copy the four values it generates.
+5. Paste them into `data/portfolios.json` → `config.comments`
+   (`repo`, `repoId`, `category`, `categoryId`) and redeploy.
+Until configured, posts show a tasteful "comments open soon" note.
+
+> **After editing `assets/css/styles.css` or `assets/js/main.js`, bump the `?v=N`
+> number on their tags in `index.html`** (and the `styles.css?v=` in `admin.html`)
+> so browsers fetch the new file instead of a cached copy.
 
 ## Compliance & disclaimers
 
