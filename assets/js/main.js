@@ -48,6 +48,7 @@
           p.series = d.series; p.metrics = m; p.monthly = d.monthly;
           p.inception = d.inception; p.asOf = d.asOf; p.asOfTime = d.asOfTime; p.quote = d.quote; p.liveSynced = true;
           if (d.aum && typeof d.aum.totalEur === "number") { p.aum = d.aum.totalEur; p.aumParts = d.aum; }
+          p.activity = d.activity || null; p.allocation = d.allocation || null;
         })
         .catch(function () { /* keep stored figures */ })
         .then(function () { if (timer) clearTimeout(timer); });
@@ -132,7 +133,8 @@
           dates: c.dates, eq: c.eq, strat: p.strat, url: p.darwinexUrl,
           real: real, live: !!p.liveSynced, asOf: p.asOf || null, asOfTime: p.asOfTime || null, metrics: p.metrics || null,
           aum: (typeof p.aum === "number" ? p.aum : null), aumParts: p.aumParts || null,
-          inception: p.inception || null
+          inception: p.inception || null,
+          monthly: p.monthly || null, activity: p.activity || null, allocation: p.allocation || null
         };
         if (!refDates || c.dates.length < refDates.length) refDates = c.dates;
       });
@@ -191,14 +193,32 @@
     function pctp(v) { return (v * 100).toFixed(2) + "%"; }
 
     /* ===================== chart ===================== */
-    var W0 = 760, H = 230, padT = 12, padB = 10;
+    // drawn at its real pixel size (viewBox = rendered box), so markers stay round at any width
+    var W0 = 760, H = 230, padT = 12, padB = 10, padR = 6; // padR keeps the end marker inside the plot
     var svg = $("svg"), line = $("line"), area = $("area"),
       cross = $("cross"), dot = $("dot"), tip = $("tip"), grid = $("grid");
-    (function drawGrid() { var s = ""; [44, 88, 132, 176].forEach(function (y) { s += '<line x1="0" y1="' + y + '" x2="' + W0 + '" y2="' + y + '"/>'; });[190, 380, 570].forEach(function (x) { s += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + H + '"/>'; }); grid.innerHTML = s; })();
+    function sizeChart() {
+      var w = Math.round(svg.clientWidth), h = Math.round(svg.clientHeight);
+      if (w > 0) W0 = w; if (h > 0) H = h;
+      svg.setAttribute("viewBox", "0 0 " + W0 + " " + H);
+      cross.setAttribute("y2", H);
+      var s = "";
+      [0.2, 0.4, 0.6, 0.8].forEach(function (f) { var y = Math.round(H * f) + 0.5; s += '<line x1="0" y1="' + y + '" x2="' + W0 + '" y2="' + y + '"/>'; });
+      [0.25, 0.5, 0.75].forEach(function (f) { var x = Math.round(W0 * f) + 0.5; s += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + H + '"/>'; });
+      grid.innerHTML = s;
+    }
+
+    // "8 Oct 26, 05:36 PM GMT+5:30" in the visitor's zone; date only without a timestamp
+    function whenText(d) {
+      var at = d.asOfTime ? new Date(d.asOfTime) : null;
+      if (at && !isNaN(at)) return fdate(at) + ", " + at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
+      return d.asOf ? fdate(parseISO(d.asOf)) : "";
+    }
+    function themeNow() { return document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); }
 
     var firstKey = PORTFOLIOS.length ? PORTFOLIOS[0].key : "COMBINED";
     var state = { k: firstKey, t: "ALL" }, cur = { eq: [], dates: [] };
-    function px(i, nn) { return (i / (nn - 1)) * W0; }
+    function px(i, nn) { return (i / (nn - 1)) * (W0 - padR); }
     function sliceIdx(dates, t) {
       var n = dates.length;
       if (t === "1M") return Math.max(0, n - 21);
@@ -239,17 +259,19 @@
         if (trMetaEl) trMetaEl.style.display = "none";
         var strat0 = $("trStrat"); strat0.textContent = full.strat || "New programme";
         $("liveLabel").textContent = "in preparation"; var db = $("dataBadge"); db.style.display = ""; db.textContent = "coming soon";
+        renderMonthly(null);
         return;
       }
       if (soonView) soonView.hidden = true;
       bignumEl.style.display = ""; chartboxEl.style.display = ""; statgridEl.style.display = ""; if (trMetaEl) trMetaEl.style.display = "";
+      sizeChart();
 
       var i0 = sliceIdx(full.dates, state.t);
       var eq = full.eq.slice(i0), dates = full.dates.slice(i0); cur = { eq: eq, dates: dates };
       var mn = Math.min.apply(null, eq), mx = Math.max.apply(null, eq), rng = (mx - mn) || 1;
       function py(v) { return padT + (1 - (v - mn) / rng) * (H - padT - padB); }
       var nn = eq.length, pts = []; for (var i = 0; i < nn; i++) pts.push(px(i, nn).toFixed(1) + "," + py(eq[i]).toFixed(1));
-      var d = "M" + pts.join(" L"); line.setAttribute("d", d); area.setAttribute("d", d + " L" + W0 + "," + H + " L0," + H + " Z");
+      var d = "M" + pts.join(" L"); line.setAttribute("d", d); area.setAttribute("d", d + " L" + px(nn - 1, nn).toFixed(1) + "," + H + " L0," + H + " Z");
       $("d0").textContent = fdate(dates[0]);
       $("d1").textContent = fdate(dates[dates.length - 1]);
       // live pulse at the latest point
@@ -301,15 +323,16 @@
       var liveLabel = $("liveLabel"), dataBadge = $("dataBadge");
       if (full.combined) { liveLabel.textContent = "equal-weight blend of live books"; dataBadge.style.display = ""; dataBadge.textContent = "blended"; }
       else if (full.real) {
-        var asOf = full.asOf ? fdate(parseISO(full.asOf)) : "";
-        // with a timestamp, show the visitor's local date + time, zone named
-        var at = full.asOfTime ? new Date(full.asOfTime) : null;
-        if (at && !isNaN(at)) asOf = fdate(at) + ", " + at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
+        var asOf = whenText(full);
         liveLabel.textContent = full.live ? "live · Darwinex · updated " + asOf : "recorded via Darwinex" + (asOf ? " · as of " + asOf : "");
         dataBadge.style.display = "none";
       }
       else { liveLabel.textContent = "preview · illustrative"; dataBadge.style.display = ""; dataBadge.textContent = "illustrative data"; }
 
+      renderMonthly(full);
+
+      // a dash pattern from an earlier draw-in would clip a resized line
+      if (!animate) { line.style.transition = "none"; line.style.strokeDasharray = ""; line.style.strokeDashoffset = ""; area.style.opacity = "1"; }
       if (animate && !REDUCE) {
         var L = line.getTotalLength();
         line.style.transition = "none"; line.style.strokeDasharray = L; line.style.strokeDashoffset = L; area.style.opacity = "0";
@@ -350,6 +373,134 @@
     seg.classList.toggle("single", seg.children.length === 1); // nothing to switch to: render as a label
     seg.addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.k = b.dataset.k;[].forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); }); render(true); });
     $("tf").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.t = b.dataset.t;[].forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); }); render(true); });
+
+    /* ===================== monthly returns heatmap ===================== */
+    var moWrap = $("monthly"), moBody = $("moBody");
+    var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    function renderMonthly(d) {
+      if (!moWrap) return;
+      var m = d && d.monthly;
+      if (!m || !m.length) { moWrap.hidden = true; return; }
+      var byYear = {};
+      m.forEach(function (o) { (byYear[o.m.slice(0, 4)] = byYear[o.m.slice(0, 4)] || {})[+o.m.slice(5, 7) - 1] = o.r; });
+      moBody.innerHTML = Object.keys(byYear).sort().map(function (y) {
+        var row = byYear[y], tot = 1, cells = "";
+        for (var i = 0; i < 12; i++) {
+          if (!(i in row)) { cells += '<div class="mo-cell empty" role="listitem" aria-label="' + MONTHS[i] + " " + y + ': no data"><span class="mo-m">' + MO[i] + '</span><span class="mo-v">&ndash;</span></div>'; continue; }
+          var r = row[i], label = MONTHS[i] + " " + y + ": " + pct(r);
+          tot *= 1 + r;
+          // diverging: hue = sign, depth = size (capped at 10%); the signed value carries it too
+          var a = (0.10 + 0.45 * Math.min(Math.abs(r) / 0.10, 1)).toFixed(3);
+          cells += '<div class="mo-cell ' + (r > 0 ? "up" : r < 0 ? "down" : "") + '" style="--a:' + a + '" role="listitem" tabindex="0" title="' + label + '" aria-label="' + label + '"><span class="mo-m">' + MO[i] + '</span><span class="mo-v">' + pct(r) + "</span></div>";
+        }
+        tot -= 1;
+        return '<div class="mo-row"><div class="mo-year"><span class="mo-y">' + y + '</span><span class="mo-tot ' + (tot >= 0 ? "pos" : "neg") + '">' + pct(tot) + '</span></div><div class="mo-grid" role="list" aria-label="Monthly returns ' + y + '">' + cells + "</div></div>";
+      }).join("");
+      moWrap.hidden = false;
+    }
+
+    /* ===================== hero live card (stat tile) ===================== */
+    var HK = PORTFOLIOS.filter(function (p) { return !p.comingSoon; }).map(function (p) { return p.key; })[0];
+    var heroCard = $("heroCard"), hcSpark = $("hcSpark"), hc = {};
+    function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+    function drawHeroCard() {
+      var d = HK && DATA[HK];
+      if (!heroCard || !d || !d.real || d.eq.length < 2) return;
+      heroCard.hidden = false;
+      var eq = d.eq, n = eq.length, last = eq[n - 1], prev = eq[n - 2], ch = last - prev;
+      $("hcTicker").textContent = HK;
+      $("hcLive").textContent = d.live ? "live" : "snapshot";
+      $("hcQuote").textContent = quoteFmt(last);
+      var at = d.asOfTime ? new Date(d.asOfTime) : d.dates[n - 1];
+      var delta = $("hcDelta");
+      if (d.live) { // real daily quotes: the last session's move
+        delta.className = "hc-delta " + (ch >= 0 ? "pos" : "neg");
+        delta.innerHTML = (ch >= 0 ? "+" : "-") + Math.abs(ch).toFixed(2) + " (" + pct(last / prev - 1) + ')<span class="when">' + (sameDay(at, new Date()) ? "today" : "on " + fdate(at)) + "</span>";
+      } else { // stored snapshot: its daily curve is reconstructed, so only quote the real total
+        var tot = d.metrics ? d.metrics.return : last / eq[0] - 1;
+        delta.className = "hc-delta " + (tot >= 0 ? "pos" : "neg");
+        delta.innerHTML = pct(tot) + '<span class="when">since inception</span>';
+      }
+      $("hcFoot").textContent = "Updated " + whenText(d);
+      if (d.url) $("hcLink").href = d.url;
+      // sparkline at real pixel size: de-emphasis line, current point in the accent
+      var w = Math.round(hcSpark.clientWidth) || 296, h = Math.round(hcSpark.clientHeight) || 64, pad = 6;
+      hcSpark.setAttribute("viewBox", "0 0 " + w + " " + h);
+      var mn = Math.min.apply(null, eq), mx = Math.max.apply(null, eq), rg = (mx - mn) || 1;
+      hc.X = function (i) { return pad + (i / (n - 1)) * (w - pad * 2); };
+      hc.Y = function (v) { return pad + (1 - (v - mn) / rg) * (h - pad * 2); };
+      hc.d = d;
+      var path = "M" + eq.map(function (v, i) { return hc.X(i).toFixed(1) + "," + hc.Y(v).toFixed(1); }).join(" L");
+      $("hcLine").setAttribute("d", path);
+      $("hcArea").setAttribute("d", path + " L" + hc.X(n - 1).toFixed(1) + "," + h + " L" + hc.X(0).toFixed(1) + "," + h + " Z");
+      hcDotAt(n - 1);
+    }
+    function hcDotAt(i) { var c = $("hcDot"); c.setAttribute("cx", hc.X(i)); c.setAttribute("cy", hc.Y(hc.d.eq[i])); }
+    if (hcSpark) {
+      hcSpark.addEventListener("mousemove", function (e) {
+        if (!hc.d) return;
+        var r = hcSpark.getBoundingClientRect(), n = hc.d.eq.length;
+        var i = Math.round(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * (n - 1));
+        hcDotAt(i);
+        $("hcFoot").textContent = fdate(hc.d.dates[i]) + " · " + quoteFmt(hc.d.eq[i]);
+      });
+      hcSpark.addEventListener("mouseleave", function () { if (!hc.d) return; hcDotAt(hc.d.eq.length - 1); $("hcFoot").textContent = "Updated " + whenText(hc.d); });
+    }
+
+    /* ===================== trading activity + asset mix ===================== */
+    var INSTR = { NI225: "Nikkei 225", XAGUSD: "Silver", XTIUSD: "WTI crude oil", XBRUSD: "Brent crude", NDX: "Nasdaq 100", NDXm: "Nasdaq 100", XAUUSD: "Gold", MSTR: "Strategy (MSTR)", GDAXI: "DAX 40", GDAXIm: "DAX 40", EURUSD: "EUR/USD", GBPUSD: "GBP/USD", USDJPY: "USD/JPY", SPX500: "S&P 500", SP500: "S&P 500", WS30: "Dow Jones", US30: "Dow Jones" };
+    function iname(t) { return INSTR[t] || t; }
+    function fmtDur(s) { return String(s).replace(/(\d+)([DHMS])/g, function (_, n, u) { return n + u.toLowerCase() + " "; }).trim(); }
+    function mixRow(name, sub, p, max, other) {
+      return '<li class="mix-row' + (other ? " other" : "") + '" title="' + esc(name) + ": " + (p * 100).toFixed(1) + '%"><span class="mix-name">' + esc(name) + (sub ? "<small>" + esc(sub) + "</small>" : "") +
+        '</span><span class="mix-track"><span class="mix-bar" style="width:' + (p / max * 100).toFixed(1) + '%"></span></span><span class="mix-val">' + (p * 100).toFixed(1) + "%</span></li>";
+    }
+    function renderExtra() {
+      var d = HK && DATA[HK], wrap = $("trExtra");
+      if (!wrap || !d) return;
+      var act = d.activity, mix = d.allocation, any = false;
+      if (act && (act.trades != null || act.avgDuration || act.winningTrades != null)) {
+        $("aTrades").textContent = act.trades != null ? act.trades.toLocaleString("en-US") : "—";
+        $("aDur").textContent = act.avgDuration ? fmtDur(act.avgDuration) : "—";
+        $("aWin").textContent = act.winningTrades != null ? (act.winningTrades * 100).toFixed(1) + "%" : "—";
+        $("activityCard").hidden = false; any = true;
+      }
+      if (mix && mix.length) {
+        // part-to-whole reads at a glance up to ~5 rows; fold the tail into "Other"
+        var top = mix.length > 5 ? mix.slice(0, 4) : mix, rest = mix.length > 5 ? mix.slice(4) : [];
+        var max = Math.max.apply(null, mix.map(function (x) { return x.pct; }));
+        var html = top.map(function (x) { return mixRow(iname(x.name), "", x.pct, max, false); }).join("");
+        // non-breaking spaces keep each name whole when the list wraps ("DAX 40", not "DAX / 40")
+        if (rest.length) html += mixRow("Other", rest.map(function (x) { return iname(x.name).replace(/ /g, " "); }).join(", "), rest.reduce(function (s, x) { return s + x.pct; }, 0), max, true);
+        $("mixList").innerHTML = html; $("mixCard").hidden = false; any = true;
+      }
+      wrap.hidden = !any;
+    }
+
+    /* ===================== theme toggle ===================== */
+    (function themeToggle() {
+      var btn = $("themeBtn"), root = document.documentElement;
+      if (!btn) return;
+      var mq = matchMedia("(prefers-color-scheme: dark)");
+      function sync() {
+        var t = themeNow();
+        btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+        if (root.hasAttribute("data-theme")) { // an explicit choice overrides the OS-based browser-bar colour
+          var bar = getComputedStyle(root).getPropertyValue("--paper").trim();
+          [].forEach.call(document.querySelectorAll('meta[name="theme-color"]'), function (m) { m.setAttribute("content", bar); });
+        }
+        var fr = document.querySelector("iframe.giscus-frame");
+        if (fr) fr.contentWindow.postMessage({ giscus: { setConfig: { theme: t } } }, "https://giscus.app");
+      }
+      btn.addEventListener("click", function () {
+        var next = themeNow() === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("theme", next); } catch (e) { /* private mode: choice lasts this page view */ }
+        sync();
+      });
+      if (mq.addEventListener) mq.addEventListener("change", sync);
+      sync();
+    })();
 
     /* ===================== count-up ===================== */
     function countUp(elm, target, fmt, dur) {
@@ -443,7 +594,7 @@
       s.setAttribute("data-strict", "1");
       s.setAttribute("data-reactions-enabled", "1");
       s.setAttribute("data-input-position", "top");
-      s.setAttribute("data-theme", gc.theme || "light");
+      s.setAttribute("data-theme", themeNow() === "dark" ? "dark" : (gc.theme || "light"));
       s.setAttribute("data-lang", "en");
       s.crossOrigin = "anonymous"; s.async = true;
       c.appendChild(s);
@@ -560,5 +711,12 @@
 
     render(false);
     requestAnimationFrame(function () { render(true); });
+    drawHeroCard();
+    renderExtra();
+    var rsT;
+    window.addEventListener("resize", function () {
+      clearTimeout(rsT);
+      rsT = setTimeout(function () { if (!DATA[state.k].comingSoon) render(false); drawHeroCard(); }, 150);
+    });
   }
 })();

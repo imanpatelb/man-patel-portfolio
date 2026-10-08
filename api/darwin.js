@@ -72,6 +72,30 @@ function parseAum(html) {
   return { darwinexCapitalEur: cap ? num(cap[1]) : 0, investorsUsd: inv ? num(inv[1]) : 0, investors: cnt ? num(cnt[1]) : 0 };
 }
 
+// Trade statistics from the page's rendered text, e.g.
+// "Number of trades 2,152 Average trade duration 12H14M Winning trades 56.18%".
+function parseActivity(html) {
+  const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ");
+  const trades = text.match(/Number of trades\s*([\d,]+)/);
+  const dur = text.match(/Average trade duration\s*((?:\d+\s*[DHMS]\s*)+)/i);
+  const win = text.match(/Winning trades\s*([\d.]+)\s*%/);
+  if (!trades && !dur && !win) return null;
+  return {
+    trades: trades ? parseInt(trades[1].replace(/,/g, ""), 10) : null,
+    avgDuration: dur ? dur[1].replace(/\s+/g, "").toUpperCase() : null, // e.g. "12H14M"
+    winningTrades: win ? parseFloat(win[1]) / 100 : null
+  };
+}
+
+// Instrument mix from the embedded config: data: [ { name: "NI225", y: 34.53 }, ... ]
+function parseAllocation(html) {
+  const block = html.match(/tradingAllocation\s*:\s*\{\s*data\s*:\s*\[([\s\S]*?)\]/);
+  if (!block) return null;
+  const out = [];
+  for (const m of block[1].matchAll(/name\s*:\s*"([^"]+)"\s*,\s*y\s*:\s*([\d.]+)/g)) out.push({ name: m[1], pct: parseFloat(m[2]) / 100 });
+  return out.length ? out.sort((a, b) => b.pct - a.pct) : null;
+}
+
 // ECB euro reference rate (USD per 1 EUR). Never rejects.
 async function fetchEurUsd() {
   try {
@@ -179,6 +203,8 @@ module.exports = async function handler(req, res) {
       ticker, source: sourceUrl, fetchedAt: new Date().toISOString(),
       inception: series[0].d, asOf: last.d, asOfTime: new Date(last.t).toISOString(), quote: last.q,
       aum: buildAum(parseAum(html), await fx),
+      activity: parseActivity(html),
+      allocation: parseAllocation(html),
       metrics, monthly,
       series: series.map((p) => [p.d, p.q])
     };
