@@ -19,18 +19,39 @@
 
   fetch("data/portfolios.json", { cache: "no-store" })
     .then(function (r) { if (!r.ok) throw new Error("data " + r.status); return r.json(); })
-    .then(init)
-    .catch(function () { init(FALLBACK); });
+    .catch(function () { return FALLBACK; })
+    .then(withLive)
+    .then(init);
 
   var FALLBACK = {
-    config: { contactEmail: "mptraderx.capital@gmail.com", currency: "EUR", inceptionDate: "2026-01-12", x: "", linkedin: "" },
+    config: { contactEmail: "mptraderx.capital@gmail.com", currency: "EUR", inceptionDate: "2026-01-09", x: "https://x.com/mptraderx", linkedin: "" },
     portfolios: [
-      { key: "KBAD", strat: "Index breakout", darwinexUrl: "https://www.darwinexzero.com/darwin/KBAD/performance", inception: "2026-01-12", gen: { seed: 7, drift: 0.00092, vol: 0.0072 } },
-      { key: "WMSN", strat: "Mean reversion", darwinexUrl: "https://www.darwinexzero.com/darwin/WMSN/performance", inception: "2026-01-12", gen: { seed: 10, drift: 0.00066, vol: 0.0085 } },
-      { key: "ASGU", strat: "Trend / carry", darwinexUrl: "https://www.darwinexzero.com/darwin/ASGU/performance", inception: "2026-01-12", gen: { seed: 7, drift: 0.00046, vol: 0.0055 } }
+      { key: "KBAD", strat: "Index breakout", darwinexUrl: "https://www.darwinex.com/invest/KBAD", inception: "2026-01-09", live: true, maxDrawdownFloor: -0.0818, gen: { seed: 7, drift: 0.00092, vol: 0.0072 } }
     ],
     notes: []
   };
+
+  /* Swap in live Darwinex data (via /api/darwin) for books marked `live`.
+     Never rejects: on error or after 2.5s a book keeps its stored figures. */
+  function withLive(CFG) {
+    var books = (CFG.portfolios || []).filter(function (p) { return p.live && !p.comingSoon; });
+    return Promise.all(books.map(function (p) {
+      var ac = window.AbortController ? new AbortController() : null;
+      var timer = ac && setTimeout(function () { ac.abort(); }, 2500);
+      return fetch("/api/darwin?ticker=" + encodeURIComponent(p.key), ac ? { signal: ac.signal } : {})
+        .then(function (r) { if (!r.ok) throw new Error("live " + r.status); return r.json(); })
+        .then(function (d) {
+          if (!d.series || d.series.length < 2) throw new Error("live: empty series");
+          var m = Object.assign({}, d.metrics);
+          // Darwinex measures drawdown intraday; never show less than its figure
+          if (typeof p.maxDrawdownFloor === "number") m.maxDrawdown = Math.min(m.maxDrawdown, p.maxDrawdownFloor);
+          p.series = d.series; p.metrics = m; p.monthly = d.monthly;
+          p.inception = d.inception; p.asOf = d.asOf; p.quote = d.quote; p.liveSynced = true;
+        })
+        .catch(function () { /* keep stored figures */ })
+        .then(function () { if (timer) clearTimeout(timer); });
+    })).then(function () { return CFG; });
+  }
 
   function init(CFG) {
     var CONFIG = CFG.config || {};
@@ -87,6 +108,9 @@
       return { dates: dates, eq: eq };
     }
 
+    // real daily closing quotes, as published by Darwinex: [["YYYY-MM-DD", quote], ...]
+    function fromSeries(s) { return { dates: s.map(function (x) { return parseISO(x[0]); }), eq: s.map(function (x) { return x[1]; }) }; }
+
     function synth(p) {
       var dates = businessDates(parseISO(p.inception || CONFIG.inceptionDate || "2026-01-12"), TODAY);
       var g = p.gen || { seed: 1, drift: 0.0008, vol: 0.007 };
@@ -100,11 +124,12 @@
       var refDates = null;
       PORTFOLIOS.forEach(function (p) {
         if (p.comingSoon) { DATA[p.key] = { comingSoon: true, strat: p.strat, url: p.darwinexUrl || "", real: false }; return; }
-        var real = !!(p.metrics && p.monthly);
-        var c = real ? reconstruct(p) : synth(p);
+        var hasSeries = !!(p.series && p.series.length > 1);
+        var real = !!(p.metrics && (hasSeries || p.monthly));
+        var c = hasSeries ? fromSeries(p.series) : (real ? reconstruct(p) : synth(p));
         DATA[p.key] = {
           dates: c.dates, eq: c.eq, strat: p.strat, url: p.darwinexUrl,
-          real: real, metrics: p.metrics || null,
+          real: real, live: !!p.liveSynced, asOf: p.asOf || null, metrics: p.metrics || null,
           aum: (typeof p.aum === "number" ? p.aum : null),
           inception: p.inception || null
         };
@@ -269,7 +294,11 @@
       // badges
       var liveLabel = $("liveLabel"), dataBadge = $("dataBadge");
       if (full.combined) { liveLabel.textContent = "equal-weight blend of live books"; dataBadge.style.display = ""; dataBadge.textContent = "blended"; }
-      else if (full.real) { liveLabel.textContent = "live · recorded via Darwinex"; dataBadge.style.display = "none"; }
+      else if (full.real) {
+        var asOf = full.asOf ? fdate(parseISO(full.asOf)) : "";
+        liveLabel.textContent = full.live ? "live · Darwinex · updated " + asOf : "recorded via Darwinex" + (asOf ? " · as of " + asOf : "");
+        dataBadge.style.display = "none";
+      }
       else { liveLabel.textContent = "preview · illustrative"; dataBadge.style.display = ""; dataBadge.textContent = "illustrative data"; }
 
       if (animate && !REDUCE) {

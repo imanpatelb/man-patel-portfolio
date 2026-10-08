@@ -43,40 +43,39 @@ vercel dev                       # serves the site + /api/contact
 
 ---
 
-## 2. Add your real Darwinex numbers
+## 2. Live Darwinex data
 
-> **Why manual?** Darwinex Zero has **no public API** — strategy data
-> (KBAD/WMSN/ASGU) is only available inside your own logged-in session.
-> Scraping it risks breaking Darwinex's Terms of Service. So the site shows
-> the numbers **you** enter, and links each strategy to its official Darwinex
-> page as third-party proof. Honest and rule-compliant.
+KBAD's track record updates **automatically**. `/api/darwin?ticker=KBAD` reads
+the DARWIN's public page on darwinex.com (`/invest/KBAD`), which embeds the full
+daily quote series — no login or credentials involved — and computes the stats
+with Darwinex's own formulas:
 
-Edit **`data/portfolios.json`**. For each portfolio, paste your equity curve
-into `series` as `{ "d": "YYYY-MM-DD", "v": equityInUSD }`:
+| Stat | Formula |
+|---|---|
+| Annualised | (1 + return)^(365 / calendar days) − 1 |
+| Volatility | sample stdev of daily returns × √252 |
+| Sharpe | annualised ÷ volatility |
+| Sortino | annualised ÷ (stdev of negative days × √252) |
+| Win rate | winning days ÷ days with a non-zero move |
 
-```json
-{
-  "key": "KBAD",
-  "strat": "Index breakout",
-  "darwinexUrl": "https://www.darwinexzero.com/darwin/KBAD/strategy-analysis",
-  "series": [
-    { "d": "2026-01-05", "v": 7000 },
-    { "d": "2026-02-27", "v": 7240 },
-    { "d": "2026-03-31", "v": 7510 }
-  ]
-}
-```
+These match Darwinex Zero's figures (checked against the 12 Jun 2026 numbers).
+The CDN caches the result for an hour, and the last good result is kept in KV,
+so the site keeps working if darwinex.com is slow, down, or changes its page.
+If both fail, the stored snapshot in `data/portfolios.json` is shown, labelled
+"as of" its date.
 
-- As soon as a portfolio has **2+ real points**, the site switches that book to
-  real data, recomputes every stat (return, drawdown, Sharpe, Sortino, etc.),
-  and drops the "illustrative data" badge automatically.
-- While `series` is empty (`[]`), a clearly-labelled sample curve is shown.
-- Daily points give the smoothest chart, but month-end points are fine.
-- Update the `notes` array for your journal entries; edit `config` for your
-  email, social links, and site URL.
+**Two numbers are still manual** in `data/portfolios.json`:
+- `aum` — the DarwinIA allocation isn't on the public page.
+- `maxDrawdownFloor` — Darwinex measures drawdown intraday; the public data is
+  daily closes, which reads shallower. The site shows the deeper of the two, so
+  raise this if Darwinex ever reports a deeper drawdown.
 
-No redeploy code needed — just commit the JSON change (Vercel redeploys on push),
-or re-run `vercel --prod`.
+To add another DARWIN: add it to `portfolios` with `"live": true`, and add its
+ticker to the `DARWIN_TICKERS` env var on Vercel (comma-separated; default
+`KBAD`).
+
+Edit `config` for your email, social links and site URL. Commit and push — Vercel
+redeploys automatically.
 
 ---
 
