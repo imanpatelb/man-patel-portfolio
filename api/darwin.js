@@ -104,6 +104,9 @@ module.exports = async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).json({ error: "Method not allowed" }); }
 
+  // one canonical URL per ticker, so cache-busting params can't bypass the CDN
+  if (Object.keys(req.query || {}).some((k) => k !== "ticker")) return res.status(400).json({ error: "Unexpected parameters" });
+
   const ticker = String((req.query && req.query.ticker) || "").toUpperCase();
   if (!ALLOWED.includes(ticker)) return res.status(404).json({ error: "Unknown ticker" });
 
