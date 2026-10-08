@@ -1,4 +1,4 @@
-# Man Patel — Systematic Trader
+# Man Patel — Discretionary Trader
 
 Editorial, production-grade portfolio site. Static front-end + one Vercel
 serverless function for the contact form. No build step, no framework — loads

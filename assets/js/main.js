@@ -1,5 +1,5 @@
 /* =====================================================================
-   Man Patel — Systematic Trader
+   Man Patel — Discretionary Trader
    Data-driven front-end. Loads /data/portfolios.json, renders the
    track record, notes, and wires the contact form to /api/contact.
 
@@ -26,7 +26,7 @@
   var FALLBACK = {
     config: { contactEmail: "mptraderx.capital@gmail.com", currency: "EUR", inceptionDate: "2026-01-09", x: "https://x.com/mptraderx", linkedin: "" },
     portfolios: [
-      { key: "KBAD", strat: "Index breakout", darwinexUrl: "https://www.darwinex.com/invest/KBAD", inception: "2026-01-09", live: true, maxDrawdownFloor: -0.0818, gen: { seed: 7, drift: 0.00092, vol: 0.0072 } }
+      { key: "KBAD", strat: "Discretionary · multi-asset", darwinexUrl: "https://www.darwinex.com/invest/KBAD", inception: "2026-01-09", live: true, maxDrawdownFloor: -0.0818, gen: { seed: 7, drift: 0.00092, vol: 0.0072 } }
     ],
     notes: []
   };

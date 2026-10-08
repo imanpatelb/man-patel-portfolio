@@ -1,5 +1,5 @@
 /* =====================================================================
-   Man Patel — Systematic Trader
+   Man Patel — Discretionary Trader
    Editorial "paper" aesthetic. Classy, restrained motion.
    ===================================================================== */
 :root{
@@ -126,6 +126,9 @@ section{padding:90px 0}
 .principle .pn{font-family:var(--mono);font-size:12px;color:var(--sage);padding-top:3px}
 .principle h3{font-size:17px;margin-bottom:4px}
 .principle p{margin:0;font-size:14px;color:var(--ink-soft)}
+.vision{margin-top:24px;padding:14px 16px;border-left:2px solid var(--gold);background:rgba(156,123,63,0.06);border-radius:0 3px 3px 0}
+.vision .vision-k{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.vision p{margin:0;font-size:14px;color:var(--ink-soft)}
 
 .risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
 .risk{padding:26px;border:1px solid var(--line);border-radius:4px;background:var(--surface);transition:transform .3s var(--ease),box-shadow .3s var(--ease),border-color .3s}
