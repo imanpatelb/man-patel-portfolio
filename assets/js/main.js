@@ -347,6 +347,7 @@
     if (PORTFOLIOS.filter(function (p) { return !p.comingSoon; }).length > 1) {
       var bc = el("button"); bc.dataset.k = "COMBINED"; bc.textContent = "Combined"; seg.appendChild(bc);
     }
+    seg.classList.toggle("single", seg.children.length === 1); // nothing to switch to: render as a label
     seg.addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.k = b.dataset.k;[].forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); }); render(true); });
     $("tf").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.t = b.dataset.t;[].forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); }); render(true); });
 
