@@ -401,13 +401,17 @@
       renderNotes(currentFilter);
     }
     function renderNotes(f) {
+      var none = POSTS.length === 0;
+      $("notesFilter").style.display = none ? "none" : ""; // topic filters are noise with nothing to filter
       var rows = POSTS.filter(function (p) { return f === "all" || p.tag === f; });
       listEl.innerHTML = rows.map(function (p) {
         var d = (p.isoDate === false) ? p.date : fdate(parseISO(p.date));
         var click = p.body ? " note-link" : "";
         var attr = p.id ? ' data-id="' + esc(p.id) + '"' : "";
         return '<div class="note' + click + '"' + attr + '><span class="nd">' + esc(d) + '</span><span class="nt">' + esc(p.title) + '</span><span class="ntag">' + esc(p.tag) + '</span></div>';
-      }).join("") || '<p class="faint" style="padding:18px 0;font-size:14px">No notes yet.</p>';
+      }).join("") || (none
+        ? '<p class="notes-empty">The first notes are on their way &mdash; subscribe below to get them by email.</p>'
+        : '<p class="notes-empty">Nothing under this topic yet.</p>');
     }
     loadPosts();
     $("notesFilter").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; currentFilter = b.dataset.f;[].forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); }); renderNotes(currentFilter); });

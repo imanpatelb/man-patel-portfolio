@@ -44,11 +44,5 @@
       }
     }
   ],
-  "notes": [
-    { "n": "012", "date": "12 Jun 26", "tag": "risk", "title": "Why I cap risk per programme, not per trade" },
-    { "n": "011", "date": "9 Jun 26", "tag": "process", "title": "What a 9% drawdown actually feels like" },
-    { "n": "010", "date": "5 Jun 26", "tag": "process", "title": "Three books, one risk budget" },
-    { "n": "009", "date": "31 May 26", "tag": "markets", "title": "Range days and the cost of patience" },
-    { "n": "008", "date": "24 May 26", "tag": "risk", "title": "Sizing with volatility, not conviction" }
-  ]
+  "notes": []
 }
