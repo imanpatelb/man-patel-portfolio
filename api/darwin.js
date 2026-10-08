@@ -13,9 +13,10 @@
    Max drawdown is measured on daily closes; Darwinex measures intraday,
    so the site applies a configured floor (see data/portfolios.json).
 
-   Caching: the CDN caches each response for an hour, so Darwinex sees at
-   most ~24 requests a day. The last good result is also kept in KV and
-   served if darwinex.com is unreachable or its page layout changes.
+   Caching: the latest result is kept in KV and reused for an hour, so
+   darwinex.com sees at most ~24 requests a day however the endpoint is
+   called; the CDN caches responses on top of that. If darwinex.com is
+   unreachable or its page layout changes, the last good result is served.
 
    Environment variables (all optional):
      DARWIN_TICKERS     — comma-separated allowlist (default "KBAD")
@@ -26,6 +27,7 @@ const ALLOWED = (process.env.DARWIN_TICKERS || "KBAD").split(",").map((s) => s.t
 const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || "";
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
 const UA = "Mozilla/5.0 (compatible; ManPatelPortfolio/1.0; +https://man-patel-portfolio.vercel.app)";
+const FRESH_MS = 60 * 60 * 1000; // quotes update daily; refetch at most hourly
 
 async function kv(cmd) {
   if (!KV_URL || !KV_TOKEN) return null;
@@ -108,6 +110,15 @@ module.exports = async function handler(req, res) {
   const sourceUrl = "https://www.darwinex.com/invest/" + ticker;
   const cacheKey = "darwin:" + ticker;
 
+  // KV is the shared cache: whatever URL is requested and whichever CDN region
+  // misses, darwinex.com is contacted at most once per FRESH_MS worldwide.
+  let saved = null;
+  try { const v = await kv(["GET", cacheKey]); saved = v ? JSON.parse(v) : null; } catch (e) { console.error("kv read failed", e.message); }
+  if (saved && Date.now() - Date.parse(saved.fetchedAt) < FRESH_MS) {
+    res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
+    return res.status(200).json(saved);
+  }
+
   try {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 7000);
@@ -131,13 +142,10 @@ module.exports = async function handler(req, res) {
     return res.status(200).json(payload);
   } catch (err) {
     console.error("darwin fetch failed:", ticker, err.message);
-    try {
-      const saved = await kv(["GET", cacheKey]);
-      if (saved) {
-        res.setHeader("Cache-Control", "public, s-maxage=300");
-        return res.status(200).json(Object.assign(JSON.parse(saved), { stale: true }));
-      }
-    } catch (e) { console.error("kv read failed", e.message); }
+    if (saved) {
+      res.setHeader("Cache-Control", "public, s-maxage=300");
+      return res.status(200).json(Object.assign(saved, { stale: true }));
+    }
     res.setHeader("Cache-Control", "no-store");
     return res.status(502).json({ error: "Live data unavailable" });
   }
