@@ -177,7 +177,7 @@ module.exports = async function handler(req, res) {
     const last = series[series.length - 1];
     const payload = {
       ticker, source: sourceUrl, fetchedAt: new Date().toISOString(),
-      inception: series[0].d, asOf: last.d, quote: last.q,
+      inception: series[0].d, asOf: last.d, asOfTime: new Date(last.t).toISOString(), quote: last.q,
       aum: buildAum(parseAum(html), await fx),
       metrics, monthly,
       series: series.map((p) => [p.d, p.q])

@@ -20,6 +20,7 @@
       "maxDrawdownFloor": -0.0818,
       "inception": "2026-01-09",
       "asOf": "2026-06-12",
+      "asOfTime": "2026-06-12T20:59:00Z",
       "aum": 125000,
       "quote": 127.52,
       "metrics": {

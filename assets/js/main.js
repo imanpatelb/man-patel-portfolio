@@ -46,7 +46,7 @@
           // Darwinex measures drawdown intraday; never show less than its figure
           if (typeof p.maxDrawdownFloor === "number") m.maxDrawdown = Math.min(m.maxDrawdown, p.maxDrawdownFloor);
           p.series = d.series; p.metrics = m; p.monthly = d.monthly;
-          p.inception = d.inception; p.asOf = d.asOf; p.quote = d.quote; p.liveSynced = true;
+          p.inception = d.inception; p.asOf = d.asOf; p.asOfTime = d.asOfTime; p.quote = d.quote; p.liveSynced = true;
           if (d.aum && typeof d.aum.totalEur === "number") { p.aum = d.aum.totalEur; p.aumParts = d.aum; }
         })
         .catch(function () { /* keep stored figures */ })
@@ -130,7 +130,7 @@
         var c = hasSeries ? fromSeries(p.series) : (real ? reconstruct(p) : synth(p));
         DATA[p.key] = {
           dates: c.dates, eq: c.eq, strat: p.strat, url: p.darwinexUrl,
-          real: real, live: !!p.liveSynced, asOf: p.asOf || null, metrics: p.metrics || null,
+          real: real, live: !!p.liveSynced, asOf: p.asOf || null, asOfTime: p.asOfTime || null, metrics: p.metrics || null,
           aum: (typeof p.aum === "number" ? p.aum : null), aumParts: p.aumParts || null,
           inception: p.inception || null
         };
@@ -302,6 +302,9 @@
       if (full.combined) { liveLabel.textContent = "equal-weight blend of live books"; dataBadge.style.display = ""; dataBadge.textContent = "blended"; }
       else if (full.real) {
         var asOf = full.asOf ? fdate(parseISO(full.asOf)) : "";
+        // with a timestamp, show the visitor's local date + time, zone named
+        var at = full.asOfTime ? new Date(full.asOfTime) : null;
+        if (at && !isNaN(at)) asOf = fdate(at) + ", " + at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
         liveLabel.textContent = full.live ? "live · Darwinex · updated " + asOf : "recorded via Darwinex" + (asOf ? " · as of " + asOf : "");
         dataBadge.style.display = "none";
       }
