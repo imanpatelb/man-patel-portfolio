@@ -125,7 +125,8 @@ module.exports = async function handler(req, res) {
       series: series.map((p) => [p.d, p.q])
     };
 
-    kv(["SET", cacheKey, JSON.stringify(payload)]).catch((e) => console.error("kv save failed", e.message));
+    // awaited: Vercel may freeze the function once the response is sent
+    try { await kv(["SET", cacheKey, JSON.stringify(payload)]); } catch (e) { console.error("kv save failed", e.message); }
     res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
     return res.status(200).json(payload);
   } catch (err) {
