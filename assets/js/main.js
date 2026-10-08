@@ -305,7 +305,10 @@
       if (i === 0) b.classList.add("on");
       seg.appendChild(b);
     });
-    var bc = el("button"); bc.dataset.k = "COMBINED"; bc.textContent = "Combined"; seg.appendChild(bc);
+    // a blend only means something with 2+ live books
+    if (PORTFOLIOS.filter(function (p) { return !p.comingSoon; }).length > 1) {
+      var bc = el("button"); bc.dataset.k = "COMBINED"; bc.textContent = "Combined"; seg.appendChild(bc);
+    }
     seg.addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.k = b.dataset.k;[].forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); }); render(true); });
     $("tf").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.t = b.dataset.t;[].forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); }); render(true); });
 
