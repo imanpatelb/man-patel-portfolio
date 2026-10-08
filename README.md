@@ -64,8 +64,10 @@ so the site keeps working if darwinex.com is slow, down, or changes its page.
 If both fail, the stored snapshot in `data/portfolios.json` is shown, labelled
 "as of" its date.
 
-**Two numbers are still manual** in `data/portfolios.json`:
-- `aum` — the DarwinIA allocation isn't on the public page.
+**AUM** is live too: Darwinex's invested capital (EUR) plus investors' AuM
+(USD on the page, converted at the ECB euro reference rate).
+
+**One number is still manual** in `data/portfolios.json`:
 - `maxDrawdownFloor` — Darwinex measures drawdown intraday; the public data is
   daily closes, which reads shallower. The site shows the deeper of the two, so
   raise this if Darwinex ever reports a deeper drawdown.

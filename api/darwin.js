@@ -13,6 +13,9 @@
    Max drawdown is measured on daily closes; Darwinex measures intraday,
    so the site applies a configured floor (see data/portfolios.json).
 
+   AUM = Darwinex's invested capital (EUR) + investors' AuM (USD on the
+   page), converted at the ECB euro reference rate.
+
    Caching: the latest result is kept in KV and reused for an hour, so
    darwinex.com sees at most ~24 requests a day however the endpoint is
    called; the CDN caches responses on top of that. If darwinex.com is
@@ -28,6 +31,7 @@ const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
 const UA = "Mozilla/5.0 (compatible; ManPatelPortfolio/1.0; +https://man-patel-portfolio.vercel.app)";
 const FRESH_MS = 60 * 60 * 1000; // quotes update daily; refetch at most hourly
+const ECB_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
 
 async function kv(cmd) {
   if (!KV_URL || !KV_TOKEN) return null;
@@ -54,6 +58,43 @@ function parseSeries(html) {
   const series = [...byDate.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([d, v]) => ({ d, t: v.t, q: v.q }));
   if (series.length < 2) throw new Error("quote series too short");
   return series;
+}
+
+// Capital figures from the page's rendered text: Darwinex's own allocation
+// (EUR) and real investors' AuM (Darwinex always shows it in USD).
+function parseAum(html) {
+  const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ");
+  const num = (s) => parseFloat(s.replace(/,/g, ""));
+  const cap = text.match(/Darwinex Invested Capital\s*([\d,]+(?:\.\d+)?)\s*€/);
+  const inv = text.match(/With \$\s*([\d,]+(?:\.\d+)?)\s*AuM/);
+  const cnt = text.match(/Join ([\d,]+) investors?/) || text.match(/Already in ([\d,]+) portfolios?/);
+  if (!cap && !inv) return null; // layout changed — the site keeps its stored figure
+  return { darwinexCapitalEur: cap ? num(cap[1]) : 0, investorsUsd: inv ? num(inv[1]) : 0, investors: cnt ? num(cnt[1]) : 0 };
+}
+
+// ECB euro reference rate (USD per 1 EUR). Never rejects.
+async function fetchEurUsd() {
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 4000);
+    const r = await fetch(ECB_URL, { headers: { "User-Agent": UA }, signal: ac.signal });
+    clearTimeout(timer);
+    if (!r.ok) return null;
+    const xml = await r.text();
+    const rate = xml.match(/currency=['"]USD['"]\s+rate=['"]([\d.]+)['"]/);
+    const date = xml.match(/time=['"](\d{4}-\d{2}-\d{2})['"]/);
+    return rate ? { rate: parseFloat(rate[1]), date: date ? date[1] : null } : null;
+  } catch (_) { return null; }
+}
+
+function buildAum(parts, fx) {
+  if (!parts) return null;
+  // without a rate, count only the euro capital rather than guess a conversion
+  const investorsEur = fx ? Math.round(parts.investorsUsd / fx.rate) : null;
+  return Object.assign(parts, {
+    investorsEur, eurUsd: fx ? fx.rate : null, fxDate: fx ? fx.date : null,
+    totalEur: Math.round(parts.darwinexCapitalEur + (investorsEur || 0))
+  });
 }
 
 function sampleSd(xs) {
@@ -123,18 +164,21 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const fx = fetchEurUsd(); // in parallel with the page fetch
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 7000);
     const r = await fetch(sourceUrl, { headers: { "User-Agent": UA, Accept: "text/html" }, signal: ac.signal });
     clearTimeout(timer);
     if (!r.ok) throw new Error("darwinex " + r.status);
 
-    const series = parseSeries(await r.text());
+    const html = await r.text();
+    const series = parseSeries(html);
     const { metrics, monthly } = computeMetrics(series);
     const last = series[series.length - 1];
     const payload = {
       ticker, source: sourceUrl, fetchedAt: new Date().toISOString(),
       inception: series[0].d, asOf: last.d, quote: last.q,
+      aum: buildAum(parseAum(html), await fx),
       metrics, monthly,
       series: series.map((p) => [p.d, p.q])
     };

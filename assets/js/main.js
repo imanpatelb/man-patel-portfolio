@@ -47,6 +47,7 @@
           if (typeof p.maxDrawdownFloor === "number") m.maxDrawdown = Math.min(m.maxDrawdown, p.maxDrawdownFloor);
           p.series = d.series; p.metrics = m; p.monthly = d.monthly;
           p.inception = d.inception; p.asOf = d.asOf; p.quote = d.quote; p.liveSynced = true;
+          if (d.aum && typeof d.aum.totalEur === "number") { p.aum = d.aum.totalEur; p.aumParts = d.aum; }
         })
         .catch(function () { /* keep stored figures */ })
         .then(function () { if (timer) clearTimeout(timer); });
@@ -130,7 +131,7 @@
         DATA[p.key] = {
           dates: c.dates, eq: c.eq, strat: p.strat, url: p.darwinexUrl,
           real: real, live: !!p.liveSynced, asOf: p.asOf || null, metrics: p.metrics || null,
-          aum: (typeof p.aum === "number" ? p.aum : null),
+          aum: (typeof p.aum === "number" ? p.aum : null), aumParts: p.aumParts || null,
           inception: p.inception || null
         };
         if (!refDates || c.dates.length < refDates.length) refDates = c.dates;
@@ -270,6 +271,11 @@
         var mh = "";
         if (full.aum === 0) mh += metaItem("AUM", "No allocation yet");
         else if (full.aum) mh += metaItem(full.combined ? "AUM · all books" : "AUM", money(full.aum));
+        var ap = full.aumParts;
+        if (ap) {
+          if (ap.darwinexCapitalEur) mh += metaItem("Darwinex capital", money(ap.darwinexCapitalEur));
+          if (ap.investorsUsd) mh += metaItem("Investors", "$" + Math.round(ap.investorsUsd).toLocaleString("en-US") + " · " + ap.investors);
+        }
         if (full.inception) mh += metaItem("Inception", monthYear(full.inception));
         if (full.metrics && typeof full.metrics.annReturn === "number") mh += metaItem("Annualised", pct(full.metrics.annReturn));
         trMetaEl.innerHTML = mh;
