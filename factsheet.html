@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KBAD factsheet — Man Patel</title>
+<meta name="description" content="One-page KBAD factsheet: live performance, risk, capital and fees, built from Darwinex's published data.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23F4F1E9'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%233F5648'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css?v=17">
+<style>
+  /* A4 portrait; the sheet's content box is 186mm wide on screen and in print */
+  @page{size:A4;margin:12mm}
+  html,body{background:var(--paper2)}
+  body::before{display:none}
+  .fs-bar{max-width:210mm;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 16px}
+  .fs-bar a{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+  .fs-msg{max-width:210mm;margin:40px auto;padding:0 16px;color:var(--ink-soft)}
+  .sheet{width:210mm;max-width:100%;margin:0 auto 40px;padding:12mm;background:#fff;color:var(--ink);font-size:11.5px;line-height:1.45;box-shadow:0 10px 40px rgba(35,32,27,.12)}
+  /* the site's page-level section/header/footer rules don't belong inside a sheet */
+  .sheet section{padding:0}
+  .sheet header.fs-head{position:static;z-index:auto;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .sheet footer.fs-foot{padding:6px 0 0}
+  .fs-k{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .fs-head{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .fs-brand{font-family:var(--serif);font-size:17px;display:flex;align-items:baseline;gap:8px}
+  .fs-brand .dot{width:6px;height:6px;border-radius:50%;background:var(--sage);transform:translateY(-2px)}
+  .fs-sub{font-size:10.5px;color:var(--ink-soft);margin-top:2px}
+  .fs-asof{text-align:right;font-size:11px;color:var(--ink-soft)}
+  .fs-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:end;margin:14px 0 12px}
+  .fs-title{font-family:var(--serif);font-weight:300;font-size:32px;line-height:1}
+  .fs-tag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text);vertical-align:middle;margin-left:6px}
+  .fs-lede{margin:8px 0 0;font-size:11.5px;color:var(--ink-soft);max-width:62ch}
+  .fs-quote{text-align:right}
+  .fs-qv{font-family:var(--serif);font-size:30px;line-height:1.05}
+  .fs-qr{font-size:11.5px;font-weight:500;color:var(--pos)}
+  .fs-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .fs-kpi{padding:8px 10px 8px 0}
+  .fs-kpi+.fs-kpi{padding-left:10px;border-left:1px solid var(--line)}
+  .fs-kpi:nth-child(5){padding-left:0;border-left:0}
+  .fs-kpi:nth-child(n+5){border-top:1px solid var(--line)}
+  .fs-kpi .v{font-family:var(--serif);font-size:17px;line-height:1.15;margin-top:2px}
+  .fs-block{margin-top:12px}
+  .fs-h{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+  .fs-hn{letter-spacing:.04em;text-transform:none;margin-left:4px}
+  .fs-chart{display:block;width:100%;height:118px}
+  #fsArea{fill:var(--chart-fill)}
+  #fsLine{fill:none;stroke:var(--sage);stroke-width:1.6;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+  .fs-axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);margin-top:3px}
+  .sheet .mo-row{grid-template-columns:52px minmax(0,1fr);gap:8px}
+  .sheet .mo-y{font-size:14px}.sheet .mo-tot{font-size:10px}
+  .sheet .mo-cell{padding:5px 2px 4px}
+  .sheet .mo-m{font-size:7.5px}.sheet .mo-v{font-size:9.5px}
+  .fs-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+  .fs-table{width:100%;border-collapse:collapse;font-size:10.5px}
+  .fs-table th{font-family:var(--mono);font-size:8px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);text-align:left;padding:0 6px 4px 0;border-bottom:1px solid var(--line)}
+  .fs-table td{padding:4px 6px 4px 0;border-bottom:1px solid var(--line);color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .fs-table td:first-child{color:var(--neg);font-weight:500}
+  .fs-table .n{text-align:right;padding-right:0}
+  .fs-dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 12px;margin:0;font-size:10.5px}
+  .fs-dl dt{color:var(--ink-faint)}
+  .fs-dl dd{margin:0;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+  .fs-mix{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:10.5px}
+  .fs-mix li{display:grid;grid-template-columns:7.4em minmax(0,1fr) 3em;gap:8px;align-items:center}
+  .fs-mix .bar{display:block;height:6px;background:var(--sage);border-radius:0 3px 3px 0}
+  .fs-mix li.other .bar{background:var(--ink-faint)}
+  .fs-mix .pv{text-align:right;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .fs-mix small{display:block;font-size:8.5px;color:var(--ink-faint);line-height:1.2}
+  .fs-p{margin:0;font-size:10.5px;color:var(--ink-soft)}
+  .fs-endorse{margin:12px 0 0;padding:7px 10px;border-left:2px solid var(--gold);background:var(--gold-tint);font-size:10.5px;color:var(--ink-soft)}
+  .fs-endorse strong{color:var(--ink);font-weight:500}
+  .fs-risk{margin-top:12px;padding-top:8px;border-top:1px solid var(--line);font-size:9.8px;line-height:1.45;color:var(--ink-soft)}
+  .fs-risk p{margin:0 0 4px}
+  .fs-warn{border-left:2px solid var(--gold);padding-left:8px;color:var(--ink);font-size:10.8px}
+  .fs-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;padding-top:6px;border-top:1px solid var(--line);font-family:var(--mono);font-size:8.5px;color:var(--ink-faint)}
+  @media (max-width:820px){
+    .sheet{padding:18px 16px;font-size:12px}
+    .fs-top,.fs-cols{grid-template-columns:1fr}
+    .fs-quote{text-align:left}
+    .fs-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .fs-kpi:nth-child(odd){padding-left:0;border-left:0}
+    .fs-kpi:nth-child(n+3){border-top:1px solid var(--line)}
+    .sheet .mo-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+    .sheet .mo-row{grid-template-columns:1fr;gap:6px}
+    .sheet .mo-year{display:flex;align-items:baseline;gap:8px}
+  }
+  @media print{
+    html,body{background:#fff}
+    .fs-bar,.fs-msg{display:none!important}
+    .sheet{width:auto;max-width:none;margin:0;padding:0;box-shadow:none;font-size:11.5px}
+    .fs-top{grid-template-columns:minmax(0,1fr) auto}.fs-quote{text-align:right}
+    .fs-cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+    .fs-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .fs-kpi{border-top:0!important}.fs-kpi+.fs-kpi{padding-left:10px;border-left:1px solid var(--line)}
+    .fs-kpi:nth-child(5){padding-left:0;border-left:0}.fs-kpi:nth-child(n+5){border-top:1px solid var(--line)!important}
+    .sheet .mo-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
+    .sheet .mo-row{grid-template-columns:52px minmax(0,1fr);gap:8px}
+    .sheet .mo-year{display:block}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<div class="fs-bar">
+  <a href="/">&larr; Back to site</a>
+  <button class="btn" id="fsSave" type="button" disabled>Save as PDF</button>
+</div>
+<p class="fs-msg" id="fsMsg">Loading live data from Darwinex&hellip;</p>
+
+<article class="sheet" id="sheet" hidden>
+  <header class="fs-head">
+    <div><div class="fs-brand"><span class="dot"></span>Man Patel</div><div class="fs-sub">Discretionary trader &middot; multi-asset</div></div>
+    <div class="fs-asof"><div class="fs-k">Factsheet</div><div id="fsAsOf"></div></div>
+  </header>
+
+  <section class="fs-top">
+    <div>
+      <h1 class="fs-title"><span id="fsTicker">KBAD</span><span class="fs-tag">DARWIN on Darwinex</span></h1>
+      <p class="fs-lede">A live, multi-asset portfolio traded by hand: market structure, cross-asset correlation and macro events, across trend-following and mean-reversion setups in equity indices, metals, energy and FX.</p>
+    </div>
+    <div class="fs-quote"><div class="fs-k">DARWIN quote</div><div class="fs-qv" id="fsQuote"></div><div class="fs-qr" id="fsRet"></div></div>
+  </section>
+
+  <section class="fs-kpis" id="fsKpis"></section>
+
+  <section class="fs-block">
+    <div class="fs-h">Performance since inception</div>
+    <svg class="fs-chart" id="fsChart" viewBox="0 0 700 118" preserveAspectRatio="none" role="img" aria-label="DARWIN quote since inception"><path id="fsArea"></path><path id="fsLine"></path></svg>
+    <div class="fs-axis"><span id="fsA0"></span><span id="fsA1"></span></div>
+  </section>
+
+  <section class="fs-block">
+    <div class="fs-h">Monthly returns</div>
+    <div id="fsMonthly"></div>
+  </section>
+
+  <section class="fs-cols">
+    <div class="fs-block">
+      <div class="fs-h">Deepest drawdowns<span class="fs-hn">(daily closes)</span></div>
+      <table class="fs-table"><thead><tr><th>Depth</th><th>Start</th><th>Recovered</th><th class="n">Days</th></tr></thead><tbody id="fsDD"></tbody></table>
+    </div>
+    <div class="fs-block">
+      <div class="fs-h">Capital and activity</div>
+      <dl class="fs-dl" id="fsCap"></dl>
+    </div>
+  </section>
+
+  <section class="fs-cols">
+    <div class="fs-block"><div class="fs-h">What it trades</div><ul class="fs-mix" id="fsMix"></ul></div>
+    <div class="fs-block"><div class="fs-h">Fees and structure</div><p class="fs-p" id="fsFees"></p></div>
+  </section>
+
+  <p class="fs-endorse" id="fsEndorse" hidden></p>
+
+  <section class="fs-risk">
+    <p class="fs-warn" id="fsCfd"></p>
+    <p id="fsDisc"></p>
+  </section>
+
+  <footer class="fs-foot"><span id="fsMail"></span><span id="fsSite"></span><span>darwinex.com/invest/<span id="fsTicker2">KBAD</span></span></footer>
+</article>
+
+<script src="assets/js/factsheet.js?v=1"></script>
+</body>
+</html>

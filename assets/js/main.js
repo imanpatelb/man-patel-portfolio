@@ -48,7 +48,7 @@
           p.series = d.series; p.metrics = m; p.monthly = d.monthly;
           p.inception = d.inception; p.asOf = d.asOf; p.asOfTime = d.asOfTime; p.quote = d.quote; p.liveSynced = true;
           if (d.aum && typeof d.aum.totalEur === "number") { p.aum = d.aum.totalEur; p.aumParts = d.aum; }
-          p.activity = d.activity || null; p.allocation = d.allocation || null; p.recognition = d.recognition || null;
+          p.activity = d.activity || null; p.allocation = d.allocation || null; p.recognition = d.recognition || null; p.fees = d.fees || null;
           if (typeof d.cfdLossPct === "number") (CFG.config = CFG.config || {}).cfdLossPct = d.cfdLossPct;
         })
         .catch(function () { /* keep stored figures */ })
@@ -135,7 +135,7 @@
           real: real, live: !!p.liveSynced, asOf: p.asOf || null, asOfTime: p.asOfTime || null, metrics: p.metrics || null,
           aum: (typeof p.aum === "number" ? p.aum : null), aumParts: p.aumParts || null,
           inception: p.inception || null,
-          monthly: p.monthly || null, activity: p.activity || null, allocation: p.allocation || null, recognition: p.recognition || null
+          monthly: p.monthly || null, activity: p.activity || null, allocation: p.allocation || null, recognition: p.recognition || null, fees: p.fees || null
         };
         if (!refDates || c.dates.length < refDates.length) refDates = c.dates;
       });
@@ -308,6 +308,7 @@
       var strat = $("trStrat"); strat.innerHTML = "";
       strat.appendChild(document.createTextNode(full.strat + "  "));
       if (full.url) { var a = el("a"); a.href = full.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "View on Darwinex ↗"; strat.appendChild(a); }
+      if (full.real && !full.combined) { strat.appendChild(document.createTextNode("  ·  ")); var sheet = el("a"); sheet.href = "/factsheet"; sheet.target = "_blank"; sheet.rel = "noopener"; sheet.textContent = "Factsheet (PDF) ↗"; strat.appendChild(sheet); }
 
       // stat grid: canonical full-period stats (exact for real books)
       var s = bookStats(state.k);
@@ -769,7 +770,7 @@
     window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
     if (totop) totop.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: REDUCE ? "auto" : "smooth" }); });
 
-    var secs = ["track", "approach", "risk", "notes", "enquiries"].map(function (id) { return $(id); });
+    var secs = ["track", "approach", "risk", "notes", "faq", "enquiries"].map(function (id) { return $(id); });
     var spy = new IntersectionObserver(function (es) { es.forEach(function (en) { if (en.isIntersecting) { var id = en.target.id; links.forEach(function (a) { a.classList.toggle("active", a.getAttribute("href") === "#" + id); }); } }); }, { rootMargin: "-45% 0px -50% 0px" });
     secs.forEach(function (s) { if (s) spy.observe(s); });
     var nl = $("navlinks");
@@ -795,6 +796,25 @@
       if (CONFIG.linkedin) { var b = el("a"); b.href = CONFIG.linkedin; b.textContent = "LinkedIn"; b.target = "_blank"; b.rel = "noopener"; f.appendChild(b); }
     })();
 
+    // FAQ figures: Darwinex's live fees, and today's quote as the worked example
+    (function faqFigures() {
+      var d = HK && DATA[HK];
+      if (d && d.fees) {
+        [].forEach.call(document.querySelectorAll(".fee-m"), function (s) { s.textContent = d.fees.management; });
+        [].forEach.call(document.querySelectorAll(".fee-p"), function (s) { s.textContent = d.fees.performance; });
+      }
+      if (d && d.real && d.eq.length) {
+        var q = d.eq[d.eq.length - 1];
+        [].forEach.call(document.querySelectorAll(".faq-q"), function (s) { s.textContent = quoteFmt(q); });
+        [].forEach.call(document.querySelectorAll(".faq-r"), function (s) { s.textContent = pct(q / 100 - 1); });
+      }
+    })();
+    // "under one year" disclosures stop being true once the record passes 12 months
+    (function underAYear() {
+      var d = HK && DATA[HK];
+      if (d && d.dates.length && (d.dates[d.dates.length - 1] - d.dates[0]) / 864e5 >= 365)
+        [].forEach.call(document.querySelectorAll(".under-1y"), function (e) { e.hidden = true; });
+    })();
     // mandatory CFD warning: Darwinex's current figure, else the stored one
     if (typeof CONFIG.cfdLossPct === "number") [].forEach.call(document.querySelectorAll(".cfd-pct"), function (s) { s.textContent = CONFIG.cfdLossPct.toFixed(2); });
 

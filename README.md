@@ -72,6 +72,11 @@ If both fail, the stored snapshot in `data/portfolios.json` is shown, labelled
   daily closes, which reads shallower. The site shows the deeper of the two, so
   raise this if Darwinex ever reports a deeper drawdown.
 
+**Factsheet.** `/factsheet` builds a one-page A4 factsheet from the same live data;
+visitors use *Save as PDF*. If live data is unavailable it shows a message instead
+of a factsheet, since people keep and forward these. The FAQ's fees are also read
+live from Darwinex.
+
 **Daily data check.** A Vercel Cron Job calls `/api/health` every day at 07:00 UTC.
 It re-fetches every source (Darwinex page, CFD figure, ECB rate, the site's own
 `/api/darwin`) and emails `CONTACT_TO` only if something that affects what visitors

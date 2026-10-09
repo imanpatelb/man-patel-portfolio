@@ -43,6 +43,7 @@ async function runChecks(ticker) {
   checks.push(check("Trade stats found", p.activity && p.activity.trades != null, p.activity ? p.activity.trades + " trades" : "missing; card hidden", false));
   checks.push(check("Asset mix found", p.allocation && p.allocation.length, p.allocation ? p.allocation.length + " instruments" : "missing; card hidden", false));
   checks.push(check("Darwinex recognition found", p.recognition && p.recognition.bestRank, p.recognition ? "best rank #" + p.recognition.bestRank : "missing; band hidden", false));
+  checks.push(check("Investor fees found", p.fees, p.fees ? p.fees.management + "% management, " + p.fees.performance + "% performance" : "missing; FAQ and factsheet show the stored fees", false));
 
   // the site's own endpoint, as visitors hit it
   try {

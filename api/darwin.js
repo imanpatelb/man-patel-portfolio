@@ -96,6 +96,15 @@ function parseRecognition(html) {
   return rank ? { bestRank: parseInt(rank[1].replace(/,/g, ""), 10) } : null;
 }
 
+// Investor fees, from the page text: "Management fee: we apply 1.2% annual fee
+// on actively invested equity. Performance fee: we apply 20% performance fee ..."
+function parseFees(html) {
+  const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ");
+  const m = text.match(/Management fee:\s*we apply\s*([\d.]+)%\s*annual fee/i);
+  const p = text.match(/Performance fee:\s*we apply\s*([\d.]+)%\s*performance fee/i);
+  return m && p ? { management: parseFloat(m[1]), performance: parseFloat(p[1]) } : null;
+}
+
 // Instrument mix from the embedded config: data: [ { name: "NI225", y: 34.53 }, ... ]
 function parseAllocation(html) {
   const block = html.match(/tradingAllocation\s*:\s*\{\s*data\s*:\s*\[([\s\S]*?)\]/);
@@ -209,6 +218,7 @@ async function buildPayload(ticker) {
     inception: series[0].d, asOf: last.d, asOfTime: new Date(last.t).toISOString(), quote: last.q,
     aum: buildAum(parseAum(html), await fx),
     recognition: parseRecognition(html),
+    fees: parseFees(html),
     activity: parseActivity(html),
     allocation: parseAllocation(html),
     cfdLossPct: await cfd,

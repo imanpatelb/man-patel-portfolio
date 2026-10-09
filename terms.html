@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css?v=16">
+<link rel="stylesheet" href="assets/css/styles.css?v=17">
 </head>
 <body>
 <header>
@@ -37,7 +37,7 @@
     <li>Your capital is at risk. You can lose some or all of what you invest.</li>
     <li>Past performance is not indicative of future results.</li>
     <li>Figures on this site are before Darwinex&rsquo;s management and performance fees and other costs, so investors&rsquo; returns are lower.</li>
-    <li>The track record is under one year. Annualised figures are extrapolated from it and are not a forecast.</li>
+    <li class="under-1y">The track record is under one year. Annualised figures are extrapolated from it and are not a forecast.</li>
   </ul>
 
   <h2>About the figures</h2>
@@ -59,6 +59,6 @@
   <div class="wrap"><p class="copy">&copy; 2026 Man Patel &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a></p></div>
 </footer>
 <!-- keep the mandatory CFD figure current: Darwinex's latest, via the site's own data function -->
-<script>fetch("/api/darwin?ticker=KBAD").then(function(r){return r.json()}).then(function(d){if(typeof d.cfdLossPct==="number")[].forEach.call(document.querySelectorAll(".cfd-pct"),function(s){s.textContent=d.cfdLossPct.toFixed(2)})}).catch(function(){});</script>
+<script>fetch("/api/darwin?ticker=KBAD").then(function(r){return r.json()}).then(function(d){if(typeof d.cfdLossPct==="number")[].forEach.call(document.querySelectorAll(".cfd-pct"),function(s){s.textContent=d.cfdLossPct.toFixed(2)});if(d.inception&&d.asOf&&(Date.parse(d.asOf)-Date.parse(d.inception))/864e5>=365)[].forEach.call(document.querySelectorAll(".under-1y"),function(e){e.hidden=true})}).catch(function(){});</script>
 </body>
 </html>
