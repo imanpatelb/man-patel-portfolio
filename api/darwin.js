@@ -88,6 +88,14 @@ function parseActivity(html) {
   };
 }
 
+// Darwinex's own endorsement, from the page text:
+// "KBAD's highest ever position in our proprietary capital allocation pool: #14"
+function parseRecognition(html) {
+  const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ");
+  const rank = text.match(/highest ever position in our proprietary capital allocation pool:\s*#\s*([\d,]+)/i);
+  return rank ? { bestRank: parseInt(rank[1].replace(/,/g, ""), 10) } : null;
+}
+
 // Instrument mix from the embedded config: data: [ { name: "NI225", y: 34.53 }, ... ]
 function parseAllocation(html) {
   const block = html.match(/tradingAllocation\s*:\s*\{\s*data\s*:\s*\[([\s\S]*?)\]/);
@@ -180,7 +188,36 @@ function computeMetrics(series) {
   };
 }
 
-module.exports = async function handler(req, res) {
+// Fetch the public DARWIN page (with the FX rate and CFD figure in parallel) and
+// build what the site renders. Throws if the page can't be fetched or parsed.
+// Shared with /api/health, which checks the same sources daily.
+async function buildPayload(ticker) {
+  const sourceUrl = "https://www.darwinex.com/invest/" + ticker;
+  const fx = fetchEurUsd(), cfd = fetchCfdLossPct();
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 7000);
+  const r = await fetch(sourceUrl, { headers: { "User-Agent": UA, Accept: "text/html" }, signal: ac.signal });
+  clearTimeout(timer);
+  if (!r.ok) throw new Error("darwinex " + r.status);
+
+  const html = await r.text();
+  const series = parseSeries(html);
+  const { metrics, monthly } = computeMetrics(series);
+  const last = series[series.length - 1];
+  return {
+    ticker, source: sourceUrl, fetchedAt: new Date().toISOString(),
+    inception: series[0].d, asOf: last.d, asOfTime: new Date(last.t).toISOString(), quote: last.q,
+    aum: buildAum(parseAum(html), await fx),
+    recognition: parseRecognition(html),
+    activity: parseActivity(html),
+    allocation: parseAllocation(html),
+    cfdLossPct: await cfd,
+    metrics, monthly,
+    series: series.map((p) => [p.d, p.q])
+  };
+}
+
+async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).json({ error: "Method not allowed" }); }
 
@@ -190,7 +227,6 @@ module.exports = async function handler(req, res) {
   const ticker = String((req.query && req.query.ticker) || "").toUpperCase();
   if (!ALLOWED.includes(ticker)) return res.status(404).json({ error: "Unknown ticker" });
 
-  const sourceUrl = "https://www.darwinex.com/invest/" + ticker;
   const cacheKey = "darwin:" + ticker;
 
   // KV is the shared cache: whatever URL is requested and whichever CDN region
@@ -203,28 +239,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const fx = fetchEurUsd(), cfd = fetchCfdLossPct(); // in parallel with the page fetch
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 7000);
-    const r = await fetch(sourceUrl, { headers: { "User-Agent": UA, Accept: "text/html" }, signal: ac.signal });
-    clearTimeout(timer);
-    if (!r.ok) throw new Error("darwinex " + r.status);
-
-    const html = await r.text();
-    const series = parseSeries(html);
-    const { metrics, monthly } = computeMetrics(series);
-    const last = series[series.length - 1];
-    const payload = {
-      ticker, source: sourceUrl, fetchedAt: new Date().toISOString(),
-      inception: series[0].d, asOf: last.d, asOfTime: new Date(last.t).toISOString(), quote: last.q,
-      aum: buildAum(parseAum(html), await fx),
-      activity: parseActivity(html),
-      allocation: parseAllocation(html),
-      cfdLossPct: await cfd,
-      metrics, monthly,
-      series: series.map((p) => [p.d, p.q])
-    };
-
+    const payload = await buildPayload(ticker);
     // awaited: Vercel may freeze the function once the response is sent
     try { await kv(["SET", cacheKey, JSON.stringify(payload)]); } catch (e) { console.error("kv save failed", e.message); }
     res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
@@ -238,4 +253,8 @@ module.exports = async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
     return res.status(502).json({ error: "Live data unavailable" });
   }
-};
+}
+
+module.exports = handler;
+module.exports.buildPayload = buildPayload;
+module.exports.ALLOWED = ALLOWED;

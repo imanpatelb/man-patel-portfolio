@@ -48,7 +48,7 @@
           p.series = d.series; p.metrics = m; p.monthly = d.monthly;
           p.inception = d.inception; p.asOf = d.asOf; p.asOfTime = d.asOfTime; p.quote = d.quote; p.liveSynced = true;
           if (d.aum && typeof d.aum.totalEur === "number") { p.aum = d.aum.totalEur; p.aumParts = d.aum; }
-          p.activity = d.activity || null; p.allocation = d.allocation || null;
+          p.activity = d.activity || null; p.allocation = d.allocation || null; p.recognition = d.recognition || null;
           if (typeof d.cfdLossPct === "number") (CFG.config = CFG.config || {}).cfdLossPct = d.cfdLossPct;
         })
         .catch(function () { /* keep stored figures */ })
@@ -135,7 +135,7 @@
           real: real, live: !!p.liveSynced, asOf: p.asOf || null, asOfTime: p.asOfTime || null, metrics: p.metrics || null,
           aum: (typeof p.aum === "number" ? p.aum : null), aumParts: p.aumParts || null,
           inception: p.inception || null,
-          monthly: p.monthly || null, activity: p.activity || null, allocation: p.allocation || null
+          monthly: p.monthly || null, activity: p.activity || null, allocation: p.allocation || null, recognition: p.recognition || null
         };
         if (!refDates || c.dates.length < refDates.length) refDates = c.dates;
       });
@@ -459,7 +459,7 @@
     function renderExtra() {
       var d = HK && DATA[HK], wrap = $("trExtra");
       if (!wrap || !d) return;
-      var act = d.activity, mix = d.allocation, any = false;
+      var act = d.activity, mix = d.allocation, any = renderDrawdowns(d);
       if (act && (act.trades != null || act.avgDuration || act.winningTrades != null)) {
         $("aTrades").textContent = act.trades != null ? act.trades.toLocaleString("en-US") : "—";
         $("aDur").textContent = act.avgDuration ? fmtDur(act.avgDuration) : "—";
@@ -476,6 +476,91 @@
         $("mixList").innerHTML = html; $("mixCard").hidden = false; any = true;
       }
       wrap.hidden = !any;
+      drawDrawdown(); // measure only now: while the block was hidden its width read as 0
+    }
+
+    /* ===================== drawdowns (real daily quotes only) ===================== */
+    // Each period runs from a peak until the quote regains it; one still open is "ongoing".
+    function drawdownPeriods(eq) {
+      var out = [], peak = eq[0], peakI = 0, cur = null;
+      for (var i = 1; i < eq.length; i++) {
+        if (eq[i] >= peak) {
+          if (cur) { cur.recI = i; out.push(cur); cur = null; }
+          peak = eq[i]; peakI = i;
+        } else {
+          var dd = eq[i] / peak - 1;
+          if (!cur) cur = { peakI: peakI, lowI: i, depth: dd, recI: null };
+          else if (dd < cur.depth) { cur.depth = dd; cur.lowI = i; }
+        }
+      }
+      if (cur) out.push(cur);
+      return out;
+    }
+    function underwater(eq) { var pk = eq[0]; return eq.map(function (v) { if (v > pk) pk = v; return v / pk - 1; }); }
+    var dd = {};
+    function daysBetween(a, b) { return Math.round((b - a) / 864e5); }
+    function drawDrawdown() {
+      var svg2 = $("ddSvg"); if (!svg2 || !dd.uw) return;
+      var w = Math.round(svg2.clientWidth) || 600, h = Math.round(svg2.clientHeight) || 150, padT = 2, padB = 6, padR = 6;
+      svg2.setAttribute("viewBox", "0 0 " + w + " " + h);
+      var uw = dd.uw, n = uw.length, lo = Math.min.apply(null, uw) || -0.01;
+      dd.X = function (i) { return (i / (n - 1)) * (w - padR); };
+      dd.Y = function (v) { return padT + (v / lo) * (h - padT - padB); };
+      var path = "M" + uw.map(function (v, i) { return dd.X(i).toFixed(1) + "," + dd.Y(v).toFixed(1); }).join(" L");
+      $("ddLine").setAttribute("d", path);
+      $("ddArea").setAttribute("d", path + " L" + dd.X(n - 1).toFixed(1) + "," + padT + " L0," + padT + " Z");
+      var z = $("ddZero"); z.setAttribute("x1", 0); z.setAttribute("x2", w - padR); z.setAttribute("y1", padT); z.setAttribute("y2", padT);
+      $("ddCross").setAttribute("y1", 0); $("ddCross").setAttribute("y2", h);
+      $("ddMin").textContent = (lo * 100).toFixed(1) + "%";
+    }
+    function ddReadAt(i) { $("ddRead").textContent = fdate(dd.dates[i]) + " · " + pctp(dd.uw[i]); }
+    function renderDrawdowns(d) {
+      var card = $("ddCard");
+      if (!card || !d || !d.live || d.eq.length < 3) return false;
+      dd.uw = underwater(d.eq); dd.dates = d.dates;
+      var periods = drawdownPeriods(d.eq), last = d.dates[d.dates.length - 1];
+      var len = function (p) { return daysBetween(d.dates[p.peakI], p.recI != null ? d.dates[p.recI] : last); };
+      var deepest = periods.slice().sort(function (a, b) { return a.depth - b.depth; }).slice(0, 5);
+      $("ddRows").innerHTML = deepest.map(function (p) {
+        return "<tr><td>" + pctp(p.depth) + "</td><td>" + fdate(d.dates[p.peakI]) + '</td><td class="dd-low">' + fdate(d.dates[p.lowI]) + "</td><td>" + (p.recI != null ? fdate(d.dates[p.recI]) : "ongoing") + '</td><td class="dd-num">' + len(p) + "</td></tr>";
+      }).join("");
+      var now = dd.uw[dd.uw.length - 1];
+      $("ddNow").textContent = now < 0 ? pctp(now) : "At a high";
+      $("ddLong").textContent = periods.length ? Math.max.apply(null, periods.map(len)) + " days" : "—";
+      $("ddA0").textContent = fdate(d.dates[0]); $("ddA1").textContent = fdate(last);
+      // the headline max drawdown is Darwinex's intraday figure when that's deeper
+      var deepClose = deepest.length ? deepest[0].depth : 0, headline = d.metrics && d.metrics.maxDrawdown;
+      if (typeof headline === "number" && headline < deepClose - 1e-6) { $("ddIntra").textContent = pctp(headline); $("ddNote").hidden = false; }
+      card.hidden = false;
+      ddReadAt(dd.uw.length - 1);
+      return true; // drawn by renderExtra once the block is visible and has a width
+    }
+    (function ddHover() {
+      var svg2 = $("ddSvg"); if (!svg2) return;
+      function at(e) {
+        if (!dd.uw) return;
+        var r = svg2.getBoundingClientRect(), cx = e.touches ? e.touches[0].clientX : e.clientX, n = dd.uw.length;
+        var i = Math.round(Math.min(1, Math.max(0, (cx - r.left) / r.width)) * (n - 1));
+        var x = dd.X(i), y = dd.Y(dd.uw[i]), c = $("ddCross"), o = $("ddDot");
+        c.setAttribute("x1", x); c.setAttribute("x2", x); c.style.opacity = "1";
+        o.setAttribute("cx", x); o.setAttribute("cy", y); o.style.opacity = "1";
+        ddReadAt(i);
+      }
+      function out() { if (!dd.uw) return; $("ddCross").style.opacity = "0"; $("ddDot").style.opacity = "0"; ddReadAt(dd.uw.length - 1); }
+      svg2.addEventListener("mousemove", at); svg2.addEventListener("mouseleave", out);
+      svg2.addEventListener("touchstart", at, { passive: true }); svg2.addEventListener("touchmove", at, { passive: true }); svg2.addEventListener("touchend", out);
+    })();
+
+    /* ===================== Darwinex recognition (live only) ===================== */
+    function renderRecognition() {
+      var d = HK && DATA[HK], band = $("endorse");
+      if (!band || !d || !d.live) return;
+      var cap = d.aumParts && d.aumParts.darwinexCapitalEur, rank = d.recognition && d.recognition.bestRank;
+      if (!cap) return; // the sentence leads with Darwinex's own capital
+      $("enCap").textContent = money(cap);
+      if (rank) $("enRank").textContent = "#" + rank; else $("enRankWrap").hidden = true;
+      if (d.url) $("enLink").href = d.url;
+      band.hidden = false;
     }
 
     /* ===================== theme toggle ===================== */
@@ -717,10 +802,11 @@
     requestAnimationFrame(function () { render(true); });
     drawHeroCard();
     renderExtra();
+    renderRecognition();
     var rsT;
     window.addEventListener("resize", function () {
       clearTimeout(rsT);
-      rsT = setTimeout(function () { if (!DATA[state.k].comingSoon) render(false); drawHeroCard(); }, 150);
+      rsT = setTimeout(function () { if (!DATA[state.k].comingSoon) render(false); drawHeroCard(); drawDrawdown(); }, 150);
     });
   }
 })();

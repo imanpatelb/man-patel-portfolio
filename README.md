@@ -72,6 +72,12 @@ If both fail, the stored snapshot in `data/portfolios.json` is shown, labelled
   daily closes, which reads shallower. The site shows the deeper of the two, so
   raise this if Darwinex ever reports a deeper drawdown.
 
+**Daily data check.** A Vercel Cron Job calls `/api/health` every day at 07:00 UTC.
+It re-fetches every source (Darwinex page, CFD figure, ECB rate, the site's own
+`/api/darwin`) and emails `CONTACT_TO` only if something that affects what visitors
+see has broken. It needs the `CRON_SECRET` env var (already set on Vercel), which
+Vercel sends with each scheduled run; other requests are refused.
+
 To add another DARWIN: add it to `portfolios` with `"live": true`, and add its
 ticker to the `DARWIN_TICKERS` env var on Vercel (comma-separated; default
 `KBAD`).
