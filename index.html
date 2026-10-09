@@ -39,7 +39,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css?v=18">
+<link rel="stylesheet" href="assets/css/styles.css?v=19">
+<noscript><style>.reveal,.stagger>*,.monthly .mo-cell{opacity:1!important;transform:none!important;filter:none!important}.hero-h .li,.sec-head .wi{transform:none!important}.setup .s-path{stroke-dashoffset:0!important}</style></noscript>
 <!-- Vercel Web Analytics: cookie-free page-view counts (see /privacy) -->
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -53,6 +54,7 @@
     <a class="brand" href="#top"><span class="dot"></span>Man Patel</a>
     <div class="nav-right">
       <nav class="navlinks" id="navlinks" aria-label="Primary">
+        <span class="nav-ind" id="navInd" aria-hidden="true"></span>
         <a href="#track">Track record</a>
         <a href="#approach">Approach</a>
         <a href="#risk">Risk</a>
@@ -73,25 +75,36 @@
 
 <main id="top">
 
-<section class="hero wrap" style="padding-bottom:0">
+<section class="hero wrap" id="hero" style="padding-bottom:0">
+  <div class="hero-bg" aria-hidden="true"><canvas id="heroBg"></canvas></div>
   <div class="hero-top">
     <div class="hero-main">
       <span class="eyebrow reveal">Discretionary trader &middot; multi-asset &middot; live since January 2026</span>
-      <h1 class="reveal">Recorded,<br><em>not promised.</em></h1>
+      <h1 class="hero-h reveal lines"><span class="ln"><span class="li">Recorded,</span></span> <span class="ln"><span class="li"><em>not promised.<svg class="scribble" viewBox="0 0 400 16" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3,11 C70,5 150,3 230,6 S350,12 397,6"/></svg></em></span></span></h1>
       <p class="lede reveal">A live, multi-asset portfolio traded by hand &mdash; reading market structure, cross-asset correlation and macro events, across trend-following and mean-reversion setups. Every figure on this page is recorded by a third party: no projections, no signals for sale, no story the numbers can&rsquo;t back.</p>
       <div class="hero-cta reveal">
-        <a class="btn" href="#track">View the track record</a>
-        <a class="btn ghost" href="#approach">How it&rsquo;s run</a>
+        <a class="btn" href="#track" data-magnetic>View the track record</a>
+        <a class="btn ghost" href="#approach" data-magnetic>How it&rsquo;s run</a>
       </div>
     </div>
-    <aside class="hero-card reveal" id="heroCard" hidden aria-label="KBAD live quote">
-      <div class="hc-head"><span class="hc-ticker" id="hcTicker">KBAD</span><span class="live"><span class="pulse"></span><span id="hcLive">live</span></span></div>
-      <div class="hc-label">DARWIN quote</div>
-      <div class="hc-quote" id="hcQuote">&mdash;</div>
-      <div class="hc-delta" id="hcDelta"></div>
-      <svg class="hc-spark" id="hcSpark" role="img" aria-label="KBAD quote since inception"><path id="hcArea"></path><path id="hcLine"></path><circle id="hcDot" r="4"></circle></svg>
-      <div class="hc-foot"><span id="hcFoot"></span><a id="hcLink" href="https://www.darwinex.com/invest/KBAD" target="_blank" rel="noopener">View on Darwinex &#8599;</a></div>
-    </aside>
+    <div class="hc-wrap reveal">
+      <aside class="hero-card" id="heroCard" hidden aria-label="KBAD live quote" data-tilt>
+        <div class="hc-head"><span class="hc-ticker" id="hcTicker">KBAD</span><span class="live"><span class="pulse"></span><span id="hcLive">live</span></span></div>
+        <div class="hc-label">DARWIN quote</div>
+        <div class="hc-quote tnum" id="hcQuote">&mdash;</div>
+        <div class="hc-delta" id="hcDelta"></div>
+        <svg class="hc-spark" id="hcSpark" role="img" aria-label="KBAD quote since inception">
+          <defs>
+            <linearGradient id="hcGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset="1" class="g1"/></linearGradient>
+            <clipPath id="hcClip"><rect id="hcClipR" x="0" y="-10" width="0" height="100"/></clipPath>
+          </defs>
+          <g clip-path="url(#hcClip)"><path id="hcArea"></path><path id="hcLine"></path></g>
+          <line id="hcCross"></line>
+          <circle id="hcDot" r="4"></circle>
+        </svg>
+        <div class="hc-foot"><span id="hcFoot"></span><a id="hcLink" href="https://www.darwinex.com/invest/KBAD" target="_blank" rel="noopener">View on Darwinex &#8599;</a></div>
+      </aside>
+    </div>
   </div>
   <div class="hero-stats reveal">
     <div class="hstat"><div class="k">Assets under mgmt</div><div class="v tnum" id="hCapital">&mdash;</div></div>
@@ -105,7 +118,7 @@
 
 <section id="track" class="wrap">
   <div class="sec-head reveal"><span class="sec-num">01</span><h2>Track record</h2></div>
-  <div class="tr-card reveal">
+  <div class="tr-card reveal spot">
     <div class="tr-top">
       <div>
         <div class="live"><span class="pulse"></span><span id="liveLabel">live &middot; recorded via Darwinex</span></div>
@@ -121,6 +134,7 @@
         <button data-t="3M">3M</button>
         <button data-t="YTD">YTD</button>
         <button data-t="ALL" class="on">All</button>
+        <button class="tf-chip" id="tfChip" type="button" hidden></button>
       </div>
     </div>
 
@@ -132,17 +146,38 @@
     <div class="tr-meta" id="trMeta"></div>
 
     <div class="chartbox" id="chartbox">
-      <svg id="svg" viewBox="0 0 760 230" preserveAspectRatio="none" role="img" aria-label="Equity curve">
-        <g id="grid" stroke="var(--line)" stroke-width="1" opacity="0.55"></g>
-        <path id="area" fill="rgba(63,86,72,0.07)" stroke="none"></path>
-        <path id="line" fill="none" stroke="var(--sage)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"></path>
-        <line id="cross" y1="0" y2="230" stroke="var(--line-strong)" stroke-width="1" style="opacity:0"></line>
-        <circle id="endring" r="4" fill="none" stroke="var(--sage)" stroke-width="1.4" style="opacity:0"></circle>
-        <circle id="endpt" r="4" fill="var(--sage)" stroke="var(--surface)" stroke-width="1.4" style="opacity:0"></circle>
-        <circle id="dot" r="4" fill="var(--sage)" stroke="var(--surface)" stroke-width="1.6" style="opacity:0"></circle>
+      <svg id="svg" role="img" aria-label="KBAD quote, daily closes. Arrow keys read the values." tabindex="0">
+        <defs>
+          <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset="1" class="g1"/></linearGradient>
+          <clipPath id="eqReveal"><rect id="eqRevealR" x="0" y="-20" width="0" height="280"/></clipPath>
+          <clipPath id="eqFocus"><rect id="eqFocusR" x="-20" y="-20" width="2000" height="280"/></clipPath>
+        </defs>
+        <g id="grid"></g>
+        <rect id="hband" class="hband"></rect>
+        <rect id="mband" class="mband"></rect>
+        <g clip-path="url(#eqReveal)">
+          <path id="ghost"></path>
+          <g clip-path="url(#eqFocus)"><path id="area"></path><path id="line"></path></g>
+        </g>
+        <line id="crossH"></line>
+        <line id="cross"></line>
+        <line id="mLink"></line>
+        <circle id="mA" r="4"></circle>
+        <circle id="mB" r="4"></circle>
+        <circle id="endring" r="4"></circle>
+        <circle id="endpt" r="4"></circle>
+        <circle id="halo" r="11"></circle>
+        <circle id="head" r="4"></circle>
+        <circle id="dot" r="4.5"></circle>
       </svg>
-      <div class="tip" id="tip"></div>
-      <div class="axis"><span id="d0"></span><span id="d1"></span></div>
+      <div class="ylab" id="ylab" aria-hidden="true"></div>
+      <div class="ypill" id="ypill" aria-hidden="true"></div>
+      <div class="tip" id="tip" aria-hidden="true"></div>
+      <div class="mtip" id="mtip" aria-hidden="true"></div>
+      <div class="xaxis" id="xaxis" aria-hidden="true"></div>
+      <div class="xpill" id="xpill" aria-hidden="true"></div>
+      <div class="chart-hint" id="chartHint"></div>
+      <div class="sr-only" id="chartLive" aria-live="polite"></div>
     </div>
 
     <div class="soonview" id="soonView" hidden>
@@ -162,22 +197,34 @@
       <div class="stat"><div class="k">Win rate (days)</div><div class="v tnum" id="sWin">&mdash;</div></div>
     </div>
 
-    <div class="monthly" id="monthly" hidden>
+    <div class="monthly watch" id="monthly" data-settle="1500" hidden>
       <div class="mo-head">
         <h3 class="mo-title">Monthly returns</h3>
       </div>
       <div id="moBody"></div>
+      <div class="mo-pop" id="moPop" hidden aria-hidden="true"></div>
     </div>
 
     <p class="tr-disc">Capital at risk. Past performance is not indicative of future results. The curve and metrics are calculated from the DARWIN&rsquo;s daily closing quotes as published by Darwinex (Tradeslide Trading Tech Limited), using Darwinex&rsquo;s own formulas, and update automatically. Max drawdown shows the deeper of the daily-close and Darwinex&rsquo;s intraday figure. The DARWIN quote is an index based at 100 on inception.<span class="under-1y"> The track record is under one year, so annualised figures are extrapolated.</span> AUM is Darwinex&rsquo;s invested capital plus investors&rsquo; capital, with USD converted at the ECB euro reference rate.</p>
   </div>
 
   <div class="tr-extra reveal" id="trExtra" hidden>
-    <div class="xcard dd-card" id="ddCard" hidden>
+    <div class="xcard dd-card spot" id="ddCard" hidden>
       <div class="dd-head"><h3 class="x-title">Drawdowns</h3><div class="dd-read" id="ddRead"></div></div>
       <div class="dd-plot">
         <div class="dd-yax" aria-hidden="true"><span>0%</span><span id="ddMin"></span></div>
-        <svg class="dd-svg" id="ddSvg" role="img" aria-label="Drawdown from peak, daily closes"><path id="ddArea"></path><line id="ddZero"></line><path id="ddLine"></path><line id="ddCross"></line><circle id="ddDot" r="4"></circle></svg>
+        <svg class="dd-svg" id="ddSvg" role="img" aria-label="Drawdown from peak, daily closes">
+          <defs>
+            <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset="1" class="g1"/></linearGradient>
+            <clipPath id="ddClip"><rect id="ddClipR" x="0" y="-10" width="0" height="200"/></clipPath>
+          </defs>
+          <rect id="ddBand"></rect>
+          <line id="ddZero"></line>
+          <g clip-path="url(#ddClip)"><path id="ddArea"></path><path id="ddLine"></path></g>
+          <g id="ddMarks"></g>
+          <line id="ddCross"></line>
+          <circle id="ddDot" r="4"></circle>
+        </svg>
       </div>
       <div class="axis dd-axis"><span id="ddA0"></span><span id="ddA1"></span></div>
       <div class="dd-body">
@@ -192,7 +239,7 @@
       </div>
       <p class="x-note" id="ddNote" hidden>From daily closing quotes. Darwinex measures intraday, so its maximum drawdown is deeper: <span id="ddIntra"></span>.</p>
     </div>
-    <div class="xcard" id="activityCard" hidden>
+    <div class="xcard spot" id="activityCard" hidden>
       <h3 class="x-title">Trading activity</h3>
       <div class="x-stats">
         <div class="x-stat"><div class="k">Trades</div><div class="v" id="aTrades">&mdash;</div></div>
@@ -206,10 +253,14 @@
           <div class="x-stat"><div class="k">Beta</div><div class="v" id="mBeta">&mdash;</div></div>
           <div class="x-stat"><div class="k">Days compared</div><div class="v" id="mDays">&mdash;</div></div>
         </div>
+        <div class="corr-scale" id="corrScale" aria-hidden="true">
+          <div class="cs-track"><span class="cs-zero"></span><span class="cs-fill"></span><span class="cs-mark"></span></div>
+          <div class="cs-lab"><span>&minus;1</span><span>0</span><span>+1</span></div>
+        </div>
       </div>
       <p class="x-note">From Darwinex. Winning trades counts individual trades; the win rate above counts days.<span id="mNote" hidden> Correlation and beta use daily returns; S&amp;P 500 data from S&amp;P Dow Jones Indices LLC via FRED.</span></p>
     </div>
-    <div class="xcard" id="mixCard" hidden>
+    <div class="xcard spot" id="mixCard" hidden>
       <h3 class="x-title">What it trades</h3>
       <ul class="mix" id="mixList"></ul>
       <p class="x-note">Share of trading by instrument, from Darwinex.</p>
@@ -221,9 +272,28 @@
   <div class="wrap">
     <div class="sec-head reveal"><span class="sec-num">02</span><h2>The approach</h2></div>
     <div class="appr-grid">
-      <div class="appr-lede reveal">I trade by hand. A setup starts with market structure, gets checked against how related markets are moving, and is weighed against the macro calendar. Part of the process is fixed rules I follow every time; the rest is judgement, applied in context.</div>
+      <div class="appr-lede reveal" data-scrub>I trade by hand. A setup starts with market structure, gets checked against how related markets are moving, and is weighed against the macro calendar. Part of the process is fixed rules I follow every time; the rest is judgement, applied in context.</div>
       <div class="appr-body reveal">
         <p>The book is multi-asset &mdash; equity indices, metals, energy and FX &mdash; and mixes two kinds of trade: trend following when a market is moving, mean reversion when it has stretched too far.</p>
+        <div class="setups reveal" aria-hidden="true">
+          <figure class="setup">
+            <svg viewBox="0 0 220 80">
+              <path class="s-guide" d="M0,73 L220,16"/>
+              <path class="s-path" pathLength="1" d="M0,66 L24,54 L38,60 L62,44 L76,50 L100,34 L114,41 L140,24 L154,30 L180,14 L220,5"/>
+              <circle class="s-dot" cx="114" cy="41" r="4"/>
+            </svg>
+            <figcaption>Trend following</figcaption>
+          </figure>
+          <figure class="setup">
+            <svg viewBox="0 0 220 80">
+              <rect class="s-band" x="0" y="26" width="220" height="28"/>
+              <path class="s-guide" d="M0,40 L220,40"/>
+              <path class="s-path" pathLength="1" d="M0,42 C16,30 28,30 40,44 S64,54 80,40 S100,8 116,10 S136,36 152,44 S184,36 220,40"/>
+              <circle class="s-dot" cx="116" cy="10" r="4"/>
+            </svg>
+            <figcaption>Mean reversion</figcaption>
+          </figure>
+        </div>
         <p>The objective is steady, risk-controlled compounding with shallow drawdowns &mdash; and a record clean enough to stand on its own.</p>
         <div class="principles stagger">
           <div class="principle"><span class="pn">i</span><div><h3>Structure first</h3><p>Market structure sets up the trade; cross-asset correlation and macro events confirm it or rule it out.</p></div></div>
@@ -242,9 +312,9 @@
 <section id="risk" class="wrap">
   <div class="sec-head reveal"><span class="sec-num">03</span><h2>Risk &amp; oversight</h2></div>
   <div class="risk-grid stagger">
-    <div class="risk"><div class="ic">01</div><h3>Independent risk engine</h3><p>Investors in KBAD get Darwinex&rsquo;s own risk management, run independently of me and targeting a maximum monthly VaR (95%) of 6.5%.</p></div>
-    <div class="risk"><div class="ic">02</div><h3>Event-aware</h3><p>Upcoming macro events are part of every decision, so event risk is weighed before a position is opened, not after.</p></div>
-    <div class="risk"><div class="ic">03</div><h3>Fully on the record</h3><p>Every trade, winners and losers, is recorded by Darwinex and can be checked on the public DARWIN page.</p></div>
+    <div class="risk spot"><div class="ic">01</div><h3>Independent risk engine</h3><p>Investors in KBAD get Darwinex&rsquo;s own risk management, run independently of me and targeting a maximum monthly VaR (95%) of 6.5%.</p></div>
+    <div class="risk spot"><div class="ic">02</div><h3>Event-aware</h3><p>Upcoming macro events are part of every decision, so event risk is weighed before a position is opened, not after.</p></div>
+    <div class="risk spot"><div class="ic">03</div><h3>Fully on the record</h3><p>Every trade, winners and losers, is recorded by Darwinex and can be checked on the public DARWIN page.</p></div>
   </div>
 </section>
 
@@ -258,7 +328,7 @@
   </div>
   <div id="notesList" class="reveal"></div>
 
-  <div class="subscribe reveal">
+  <div class="subscribe reveal spot">
     <div class="sub-wrap">
       <div class="sub-h">Letters &amp; notes</div>
       <div class="sub-p">New writing on the process and the markets, by email, occasionally. Unsubscribe anytime &mdash; see the <a href="/privacy">privacy policy</a>.</div>
@@ -267,7 +337,7 @@
       <label for="subEmail" class="sr-only" style="position:absolute;left:-9999px">Email</label>
       <input id="subEmail" name="email" type="email" autocomplete="email" placeholder="you@email.com" required>
       <input class="hp" id="subCompany" name="company" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <button class="btn" id="subBtn" type="submit">Subscribe</button>
+      <button class="btn" id="subBtn" type="submit" data-magnetic>Subscribe</button>
     </form>
     <div class="form-status" id="subStatus" role="status" aria-live="polite" style="flex-basis:100%"></div>
   </div>
@@ -313,7 +383,7 @@
       <div class="field"><label for="fm">Message</label><textarea id="fm" name="message" placeholder="A line about who you are." required></textarea></div>
       <!-- honeypot: hidden from humans, bots tend to fill it -->
       <input class="hp" id="company" name="company" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <button class="btn" id="sendBtn" type="submit">Send enquiry</button>
+      <button class="btn" id="sendBtn" type="submit" data-magnetic>Send enquiry</button>
       <div class="form-status" id="formStatus" role="status" aria-live="polite"></div>
       <p class="form-legal">Used only to reply to you. <a href="/privacy">Privacy policy</a>.</p>
     </form>
@@ -358,6 +428,7 @@
   </article>
 </div>
 
-<script src="assets/js/main.js?v=20" defer></script>
+<script src="assets/js/motion.js?v=1" defer></script>
+<script src="assets/js/main.js?v=21" defer></script>
 </body>
 </html>
