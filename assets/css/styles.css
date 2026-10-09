@@ -267,9 +267,11 @@ section{padding:90px 0}
 .monthly.in .mo-cell{animation:moIn .75s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--k,0) * 45ms + 120ms)}
 .monthly.in.settled .mo-cell{animation:none;opacity:1}
 @keyframes moIn{from{opacity:0;transform:translateY(10px) scale(.8)}to{opacity:1;transform:none}}
-.monthly.settled .mo-cell:not(.empty):hover{transform:translateY(-3px)}
-.monthly.settled .mo-grid:hover .mo-cell:not(:hover){opacity:.5}
-.monthly.live .mo-cell:not(.empty){cursor:pointer}
+@media (hover:hover){
+  .monthly.settled .mo-cell:not(.empty):hover{transform:translateY(-3px)}
+  .monthly.settled .mo-grid:has(.mo-cell:not(.empty):hover) .mo-cell:not(:hover){opacity:.5}
+}
+.monthly.zoomable .mo-cell:not(.empty){cursor:pointer}
 .mo-cell.sel{box-shadow:inset 0 0 0 2px var(--gold)}
 .mo-pop{position:absolute;left:0;top:0;z-index:7;width:236px;background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;padding:12px 14px 10px;box-shadow:0 18px 44px rgba(var(--shadow),.16);pointer-events:none;opacity:0;transform:translateY(6px) scale(.97);transform-origin:50% 100%;transition:opacity .18s,transform .3s cubic-bezier(.16,1,.3,1)}
 .mo-pop.show{opacity:1;transform:none}
@@ -604,6 +606,10 @@ footer{border-top:1px solid var(--line);padding:54px 0 60px}
   .hstat:nth-child(3){border-left:0;padding-left:0}
   .statgrid{grid-template-columns:1fr 1fr;gap:20px}
   .tr-extra{grid-template-columns:1fr}
+  /* monthly: two rows of six, year on its own line ("+10.64%" needs ~54px; twelve across can't give it below ~900px) */
+  .mo-row{grid-template-columns:1fr;gap:8px}
+  .mo-year{display:flex;align-items:baseline;gap:10px}
+  .mo-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
 }
 @media(max-width:640px){
   .wrap{padding-left:20px;padding-right:20px}
@@ -645,10 +651,6 @@ footer{border-top:1px solid var(--line);padding:54px 0 60px}
   .tr-meta{gap:14px}
   .statgrid{gap:18px}
   .stat .v{font-size:20px}
-  /* monthly: two rows of six; year on its own line */
-  .mo-row{grid-template-columns:1fr;gap:8px}
-  .mo-year{display:flex;align-items:baseline;gap:10px}
-  .mo-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
   .mo-v{font-size:11.5px}
   /* activity + mix */
   .xcard{padding:20px 18px}

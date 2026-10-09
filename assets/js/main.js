@@ -628,7 +628,7 @@
         tot -= 1;
         return '<div class="mo-row"><div class="mo-year"><span class="mo-y">' + y + '</span><span class="mo-tot ' + (tot >= 0 ? "pos" : "neg") + '">' + pct(tot) + '</span></div><div class="mo-grid" role="list" aria-label="Monthly returns ' + y + '">' + cells + "</div></div>";
       }).join("");
-      moWrap.classList.toggle("live", !!d.live);
+      moWrap.classList.toggle("zoomable", !!d.live); // not "live": that class styles the live badge
       moWrap.hidden = false;
     }
     function markMonth() {
