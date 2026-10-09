@@ -32,6 +32,7 @@ const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST
 const UA = "Mozilla/5.0 (compatible; ManPatelPortfolio/1.0; +https://man-patel-portfolio.vercel.app)";
 const FRESH_MS = 60 * 60 * 1000; // quotes update daily; refetch at most hourly
 const ECB_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
+const CFD_URL = "https://www.darwinex.com/api/accounting/profitsResume/looserUsersPercentage";
 
 async function kv(cmd) {
   if (!KV_URL || !KV_TOKEN) return null;
@@ -94,6 +95,20 @@ function parseAllocation(html) {
   const out = [];
   for (const m of block[1].matchAll(/name\s*:\s*"([^"]+)"\s*,\s*y\s*:\s*([\d.]+)/g)) out.push({ name: m[1], pct: parseFloat(m[2]) / 100 });
   return out.length ? out.sort((a, b) => b.pct - a.pct) : null;
+}
+
+// Darwinex's published share of retail CFD accounts that lose money — the
+// figure its mandatory CFD risk warning quotes (e.g. 53.84). Never rejects.
+async function fetchCfdLossPct() {
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 4000);
+    const r = await fetch(CFD_URL, { headers: { "User-Agent": UA, Accept: "application/json" }, signal: ac.signal });
+    clearTimeout(timer);
+    if (!r.ok) return null;
+    const v = parseFloat(await r.text());
+    return v > 0 && v < 100 ? v : null;
+  } catch (_) { return null; }
 }
 
 // ECB euro reference rate (USD per 1 EUR). Never rejects.
@@ -188,7 +203,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const fx = fetchEurUsd(); // in parallel with the page fetch
+    const fx = fetchEurUsd(), cfd = fetchCfdLossPct(); // in parallel with the page fetch
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 7000);
     const r = await fetch(sourceUrl, { headers: { "User-Agent": UA, Accept: "text/html" }, signal: ac.signal });
@@ -205,6 +220,7 @@ module.exports = async function handler(req, res) {
       aum: buildAum(parseAum(html), await fx),
       activity: parseActivity(html),
       allocation: parseAllocation(html),
+      cfdLossPct: await cfd,
       metrics, monthly,
       series: series.map((p) => [p.d, p.q])
     };

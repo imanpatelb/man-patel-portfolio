@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms of use — Man Patel</title>
+<meta name="description" content="Terms of use and risk warnings for this site.">
+<link rel="canonical" href="https://man-patel-portfolio.vercel.app/terms">
+<meta name="theme-color" content="#F4F1E9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161411" media="(prefers-color-scheme: dark)">
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23F4F1E9'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%233F5648'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css?v=15">
+</head>
+<body>
+<header>
+  <div class="legal-top"><a class="brand" href="/"><span class="dot"></span>Man Patel</a><a href="/">&larr; Back to site</a></div>
+</header>
+<main class="legal">
+  <h1>Terms of use</h1>
+  <p class="updated">Last updated 9 October 2026</p>
+
+  <p class="lead">This is the personal website of Man Patel, an individual trader. By using it, you accept these terms.</p>
+
+  <h2>Not advice, not an offer</h2>
+  <p>Everything here is information about my own trading. It isn&rsquo;t investment, financial, legal or tax advice, a recommendation, or an offer or solicitation to buy or sell any financial instrument. I&rsquo;m not a regulated entity, investment adviser or fund manager, and using this site doesn&rsquo;t create a client relationship.</p>
+
+  <h2>Investing in KBAD</h2>
+  <p>KBAD is a DARWIN offered by Darwinex. If you invest, you do so on Darwinex, under Darwinex&rsquo;s terms, fees and risk disclosures, and Darwinex manages its risk independently of me. I never hold investors&rsquo; money.</p>
+
+  <h2>Risk warning</h2>
+  <p class="warn">CFDs are complex instruments and come with a high risk of losing money rapidly due to leverage. <span class="cfd-pct">53.84</span>% of retail investor accounts lose money when trading CFDs with Darwinex. You should consider whether you understand how CFDs work and whether you can afford to take the high risk of losing your money.</p>
+  <ul>
+    <li>Your capital is at risk. You can lose some or all of what you invest.</li>
+    <li>Past performance is not indicative of future results.</li>
+    <li>Figures on this site are before Darwinex&rsquo;s management and performance fees and other costs, so investors&rsquo; returns are lower.</li>
+    <li>The track record is under one year. Annualised figures are extrapolated from it and are not a forecast.</li>
+  </ul>
+
+  <h2>About the figures</h2>
+  <p>Performance figures are calculated from data Darwinex publishes, using Darwinex&rsquo;s own formulas, and update automatically. They may be delayed or differ from Darwinex&rsquo;s records; where they differ, Darwinex&rsquo;s records prevail. AUM converts US dollars to euros at the European Central Bank&rsquo;s reference rate. No figure is guaranteed to be accurate or complete.</p>
+
+  <h2>Liability</h2>
+  <p>The site is provided as it is. To the extent the law allows, I&rsquo;m not liable for any loss arising from using it or relying on it.</p>
+
+  <h2>Links</h2>
+  <p>Links to other sites, including Darwinex and GitHub, are for convenience. Those sites have their own terms.</p>
+
+  <h2>Content</h2>
+  <p>The text, design and code of this site belong to Man Patel unless stated otherwise. Please don&rsquo;t republish them as your own.</p>
+
+  <h2>Changes and contact</h2>
+  <p>These terms may change; the date above shows the current version. Questions: <a href="mailto:mptraderx.capital@gmail.com">mptraderx.capital@gmail.com</a>.</p>
+</main>
+<footer>
+  <div class="wrap"><p class="copy">&copy; 2026 Man Patel &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a></p></div>
+</footer>
+<!-- keep the mandatory CFD figure current: Darwinex's latest, via the site's own data function -->
+<script>fetch("/api/darwin?ticker=KBAD").then(function(r){return r.json()}).then(function(d){if(typeof d.cfdLossPct==="number")[].forEach.call(document.querySelectorAll(".cfd-pct"),function(s){s.textContent=d.cfdLossPct.toFixed(2)})}).catch(function(){});</script>
+</body>
+</html>

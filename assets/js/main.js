@@ -49,6 +49,7 @@
           p.inception = d.inception; p.asOf = d.asOf; p.asOfTime = d.asOfTime; p.quote = d.quote; p.liveSynced = true;
           if (d.aum && typeof d.aum.totalEur === "number") { p.aum = d.aum.totalEur; p.aumParts = d.aum; }
           p.activity = d.activity || null; p.allocation = d.allocation || null;
+          if (typeof d.cfdLossPct === "number") (CFG.config = CFG.config || {}).cfdLossPct = d.cfdLossPct;
         })
         .catch(function () { /* keep stored figures */ })
         .then(function () { if (timer) clearTimeout(timer); });
@@ -708,6 +709,9 @@
       if (CONFIG.x) { var a = el("a"); a.href = CONFIG.x; a.textContent = "X"; a.target = "_blank"; a.rel = "noopener"; f.appendChild(a); }
       if (CONFIG.linkedin) { var b = el("a"); b.href = CONFIG.linkedin; b.textContent = "LinkedIn"; b.target = "_blank"; b.rel = "noopener"; f.appendChild(b); }
     })();
+
+    // mandatory CFD warning: Darwinex's current figure, else the stored one
+    if (typeof CONFIG.cfdLossPct === "number") [].forEach.call(document.querySelectorAll(".cfd-pct"), function (s) { s.textContent = CONFIG.cfdLossPct.toFixed(2); });
 
     render(false);
     requestAnimationFrame(function () { render(true); });
