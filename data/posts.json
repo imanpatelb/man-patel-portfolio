@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "cbbe5948-0a88-44b6-82f1-1ae40cc9c1f2",
+    "slug": "why-i-m-writing-these-notes",
+    "title": "Why I'm writing these notes",
+    "body": "KBAD has been live on Darwinex since January 2026. The track record shows what happened. These notes are for the part it can't show: why I took a trade, why I passed on one, and what I'd do differently.\n\n## How I trade\n\nI trade by hand. A setup starts with market structure. Then I check it against how related markets are moving, and weigh it against the macro calendar. If correlation or an upcoming event argues against it, I leave it.\n\nPart of the process is fixed rules I follow every time. The rest is judgement, applied in context. The book covers equity indices, metals, energy and FX, and mixes two kinds of trade: trend following when a market is moving, and mean reversion when it has stretched too far.\n\n## What you'll find here\n\n**Trades and the reasoning behind them**, including the ones that didn't work.\n\n**Risk**: how I manage it, and when I stand aside.\n\n**The algorithmic side**: I'm building versions of the rule-based parts of the process. Nothing is live yet; the aim is to run it within the next one to two years.\n\n## What you won't\n\nSignals, tips or calls. Everything here is about my own trading. It isn't advice, and past performance doesn't tell you what comes next.\n\nIf you'd like new notes by email, use the Letters & notes box on this page.",
+    "tag": "letter",
+    "date": "2026-10-09",
+    "createdAt": "2026-10-09T09:24:32.067Z"
+  }
+]
