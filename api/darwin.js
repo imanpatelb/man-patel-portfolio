@@ -29,13 +29,17 @@
 const ALLOWED = (process.env.DARWIN_TICKERS || "KBAD").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
 const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || "";
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
-const UA = "Mozilla/5.0 (compatible; ManPatelPortfolio/1.0; +https://man-patel-portfolio.vercel.app)";
+const UA = "Mozilla/5.0 (compatible; ManPatelPortfolio/1.0; +https://manpateltrades.com)";
 const FRESH_MS = 60 * 60 * 1000; // quotes update daily; refetch at most hourly
+const STALE_MS = 48 * 60 * 60 * 1000; // a stored copy this old is flagged stale (the daily check alerts on it)
 const ECB_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
 const CFD_URL = "https://www.darwinex.com/api/accounting/profitsResume/looserUsersPercentage";
 const FRED_SP500 = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500&cosd=";
 
+// On Cloudflare the store is a KV namespace (cloudflare/worker.js hands it over with useKV).
+let CF_KV = null;
 async function kv(cmd) {
+  if (CF_KV) { if (cmd[0] === "GET") return CF_KV.get(cmd[1]); if (cmd[0] === "SET") return CF_KV.put(cmd[1], cmd[2]); return null; }
   if (!KV_URL || !KV_TOKEN) return null;
   const r = await fetch(KV_URL, {
     method: "POST",
@@ -285,14 +289,22 @@ async function handler(req, res) {
   // misses, darwinex.com is contacted at most once per FRESH_MS worldwide.
   let saved = null;
   try { const v = await kv(["GET", cacheKey]); saved = v ? JSON.parse(v) : null; } catch (e) { console.error("kv read failed", e.message); }
-  if (saved && Date.now() - Date.parse(saved.fetchedAt) < FRESH_MS) {
+  const age = saved ? Date.now() - Date.parse(saved.fetchedAt) : Infinity;
+  if (saved && age < FRESH_MS) {
     res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
     return res.status(200).json(saved);
+  }
+  // An older copy, on a runtime that can keep working after it responds (req.waitUntil):
+  // answer with the copy now and refetch behind it, so no visitor waits on the fetch and parse.
+  if (saved && typeof req.waitUntil === "function") {
+    req.waitUntil(refresh(ticker).catch((e) => console.error("darwin refresh failed:", ticker, e.message)));
+    res.setHeader("Cache-Control", "public, s-maxage=60");
+    return res.status(200).json(age > STALE_MS ? Object.assign(saved, { stale: true }) : saved);
   }
 
   try {
     const payload = await buildPayload(ticker);
-    // awaited: Vercel may freeze the function once the response is sent
+    // awaited: the runtime may stop the function once the response is sent
     try { await kv(["SET", cacheKey, JSON.stringify(payload)]); } catch (e) { console.error("kv save failed", e.message); }
     res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
     return res.status(200).json(payload);
@@ -307,6 +319,15 @@ async function handler(req, res) {
   }
 }
 
+// fetch, parse and store the latest payload for a ticker
+async function refresh(ticker) {
+  const payload = await buildPayload(ticker);
+  await kv(["SET", "darwin:" + ticker, JSON.stringify(payload)]);
+  return payload;
+}
+
 module.exports = handler;
 module.exports.buildPayload = buildPayload;
+module.exports.refresh = refresh;
+module.exports.useKV = (ns) => { CF_KV = ns || null; };
 module.exports.ALLOWED = ALLOWED;

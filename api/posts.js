@@ -6,9 +6,9 @@
    DELETE -> delete a post   (Authorization: Bearer <ADMIN_PASSWORD>)
 
    Every publish or delete is a commit, so posts have full history and
-   can't vanish with a database. Vercel redeploys on each commit, and the
-   site itself reads the static /data/posts.json — new posts appear about
-   a minute after publishing.
+   can't vanish with a database. The site serves /data/posts.json live from
+   the repo through this handler (cloudflare/worker.js, cached for a minute),
+   so new posts appear about a minute after publishing, with no rebuild.
 
    Environment variables:
      ADMIN_PASSWORD — required; the password used on /admin

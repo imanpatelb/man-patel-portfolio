@@ -6,3 +6,7 @@ node_modules/
 .DS_Store
 npm-debug.log*
 *.log
+# Cloudflare build output and local state
+dist/
+.wrangler/
+.dev.vars*

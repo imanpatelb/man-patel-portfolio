@@ -1,0 +1,27 @@
+// Cloudflare Workers config for manpateltrades.com (see cloudflare/worker.js)
+{
+  "name": "man-patel-portfolio",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "build": { "command": "node cloudflare/build.mjs" },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    // pages and data go through the Worker (www redirect, live posts, /api);
+    // styles, scripts and images are served straight from the edge
+    "run_worker_first": ["/*", "!/assets/*"]
+  },
+  // last good copies of the live data and the post list (cloudflare/worker.js)
+  "kv_namespaces": [{ "binding": "CACHE", "id": "aa5011a18d9643f69bb3b7b9be3002d1" }],
+  // the daily data check, 07:00 UTC
+  "triggers": { "crons": ["0 7 * * *"] },
+  // the site's address; www redirects to it (cloudflare/worker.js)
+  "routes": [
+    { "pattern": "manpateltrades.com", "custom_domain": true },
+    { "pattern": "www.manpateltrades.com", "custom_domain": true }
+  ],
+  "observability": { "enabled": true },
+  "workers_dev": true
+}

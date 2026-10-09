@@ -1,9 +1,9 @@
 /* =====================================================================
-   POST /api/contact  — Vercel serverless function (Node 18+ runtime)
+   POST /api/contact  — serverless function (runs in cloudflare/worker.js)
    Receives the enquiry form, validates it, and emails it to the owner
    via Resend (https://resend.com). No dependencies — uses native fetch.
 
-   Required environment variable on Vercel:
+   Required secret (Cloudflare → Worker → Settings → Variables and Secrets):
      RESEND_API_KEY   — your Resend API key (re_...)
    Optional environment variables:
      CONTACT_TO       — recipient (default mptraderx.capital@gmail.com)

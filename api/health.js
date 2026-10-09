@@ -1,16 +1,17 @@
 /* =====================================================================
    GET /api/health — daily check that the live data still works.
 
-   Run by a Vercel Cron Job (see vercel.json). It checks every source the
+   Run daily by the Cron Trigger in wrangler.jsonc. It checks every source the
    site depends on and emails the owner when a check that affects what
    visitors see fails, so a change to Darwinex's page can't silently leave
    the site showing stale figures. When everything passes, no email.
 
-   Auth: Vercel's cron sends CRON_SECRET as a Bearer token; any other
-   request is refused, so nobody else can trigger alert emails.
+   Auth: the scheduled run passes a one-off CRON_SECRET as a Bearer token
+   (cloudflare/worker.js); any other request is refused, so nobody else can
+   trigger alert emails.
 
    Environment variables:
-     CRON_SECRET     — required
+     CRON_SECRET     — set by the scheduled run
      RESEND_API_KEY  — required to send the alert
      CONTACT_TO / CONTACT_FROM — optional, as for /api/contact
    ===================================================================== */
@@ -18,7 +19,7 @@ const darwin = require("./darwin.js");
 
 const TO_DEFAULT = "mptraderx.capital@gmail.com";
 const FROM_DEFAULT = "Portfolio Site <onboarding@resend.dev>";
-const SITE = "https://man-patel-portfolio.vercel.app";
+const SITE = process.env.SITE_URL || "https://manpateltrades.com";
 const MAX_QUOTE_AGE_DAYS = 4; // covers a weekend plus a market holiday
 
 // critical: a failure changes what visitors see (stale or wrong figures)

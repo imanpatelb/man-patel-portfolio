@@ -132,7 +132,7 @@
       "This factsheet is a personal track record, not investment advice or an offer to invest; investing in " + d.ticker + " happens on Darwinex, under its terms and risk warnings.";
 
     $("fsMail").textContent = conf.contactEmail || "mptraderx.capital@gmail.com";
-    $("fsSite").textContent = String(conf.siteUrl || "https://man-patel-portfolio.vercel.app").replace(/^https?:\/\//, "");
+    $("fsSite").textContent = String(conf.siteUrl || "https://manpateltrades.com").replace(/^https?:\/\//, "");
 
     $("fsMsg").hidden = true; $("sheet").hidden = false;
     var save = $("fsSave"); save.disabled = false;

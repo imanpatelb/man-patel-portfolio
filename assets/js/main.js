@@ -30,12 +30,6 @@
   }
   var FAST = { fast: true };
 
-  fetch("data/portfolios.json", { cache: "no-store" })
-    .then(function (r) { if (!r.ok) throw new Error("data " + r.status); return r.json(); })
-    .catch(function () { return FALLBACK; })
-    .then(withLive)
-    .then(init);
-
   var FALLBACK = {
     config: { contactEmail: "mptraderx.capital@gmail.com", currency: "EUR", inceptionDate: "2026-01-09", x: "https://x.com/mptraderx", linkedin: "" },
     portfolios: [
@@ -44,15 +38,32 @@
     notes: []
   };
 
+  // Ask for the live data of the books already known to be live straight away, alongside
+  // portfolios.json rather than after it: one round trip fewer before the numbers appear.
+  function liveData(key) {
+    var ac = window.AbortController ? new AbortController() : null;
+    var timer = ac && setTimeout(function () { ac.abort(); }, 2500);
+    return fetch("/api/darwin?ticker=" + encodeURIComponent(key), ac ? { signal: ac.signal } : {})
+      .then(function (r) { if (timer) clearTimeout(timer); if (!r.ok) throw new Error("live " + r.status); return r.json(); },
+        function (e) { if (timer) clearTimeout(timer); throw e; });
+  }
+  var EARLY = {};
+  FALLBACK.portfolios.forEach(function (p) { if (p.live && !p.comingSoon) EARLY[p.key] = liveData(p.key); });
+
+  fetch("data/portfolios.json", { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw new Error("data " + r.status); return r.json(); })
+    .catch(function () { return FALLBACK; })
+    .then(withLive)
+    .then(init);
+
   /* Swap in live Darwinex data (via /api/darwin) for books marked `live`.
      Never rejects: on error or after 2.5s a book keeps its stored figures. */
   function withLive(CFG) {
     var books = (CFG.portfolios || []).filter(function (p) { return p.live && !p.comingSoon; });
     return Promise.all(books.map(function (p) {
-      var ac = window.AbortController ? new AbortController() : null;
-      var timer = ac && setTimeout(function () { ac.abort(); }, 2500);
-      return fetch("/api/darwin?ticker=" + encodeURIComponent(p.key), ac ? { signal: ac.signal } : {})
-        .then(function (r) { if (!r.ok) throw new Error("live " + r.status); return r.json(); })
+      var req = EARLY[p.key] || liveData(p.key);
+      EARLY[p.key] = null; // a later call (none today) fetches afresh
+      return req
         .then(function (d) {
           if (!d.series || d.series.length < 2) throw new Error("live: empty series");
           var m = Object.assign({}, d.metrics);
@@ -64,8 +75,7 @@
           p.activity = d.activity || null; p.allocation = d.allocation || null; p.recognition = d.recognition || null; p.fees = d.fees || null; p.benchmark = d.benchmark || null;
           if (typeof d.cfdLossPct === "number") (CFG.config = CFG.config || {}).cfdLossPct = d.cfdLossPct;
         })
-        .catch(function () { /* keep stored figures */ })
-        .then(function () { if (timer) clearTimeout(timer); });
+        .catch(function () { /* keep stored figures */ });
     })).then(function () { return CFG; });
   }
 
@@ -1003,7 +1013,7 @@
     var POSTS = [], byId = {}, currentFilter = "all";
 
     function loadPosts() {
-      // the committed file; /api/posts commits to it and Vercel redeploys
+      // the post list: /api/posts commits it to the repo, and the site serves it live from there
       fetch("data/posts.json", { cache: "no-store" })
         .then(function (r) { return r.ok ? r.json() : []; })
         .then(function (d) { applyPosts(Array.isArray(d) ? d : []); })
