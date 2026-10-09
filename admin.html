@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css?v=17">
+<link rel="stylesheet" href="assets/css/styles.css?v=18">
 <style>
   .admin{max-width:760px;margin:0 auto;padding:48px 28px 80px}
   .admin h1{font-family:var(--serif);font-size:30px;margin-bottom:4px}
@@ -127,7 +127,8 @@
     fetch("/api/posts", { method: "DELETE", headers: headers(), body: JSON.stringify({ id: "__check__" }) })
       .then(function (r) {
         if (r.status === 401) { $("loginMsg").textContent = "Wrong password."; pw = ""; return; }
-        if (!r.ok && r.status === 500) { $("loginMsg").textContent = "Storage not set up yet (KV env vars)."; return; }
+        if (!r.ok && r.status === 500) { $("loginMsg").textContent = "Blog storage isn't set up yet: add GITHUB_TOKEN in Vercel."; return; }
+        if (!r.ok && r.status === 502) { $("loginMsg").textContent = "Can't reach GitHub: the GITHUB_TOKEN may have expired."; return; }
         sessionStorage.setItem(KEY, pw); show(true);
       })
       .catch(function () { $("loginMsg").textContent = "Network error."; });
@@ -144,7 +145,7 @@
     fetch("/api/posts", { method: "POST", headers: headers(), body: JSON.stringify({ title: title, body: body, tag: tag }) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
       .then(function (res) {
-        if (res.ok) { msg.className = "msg ok"; msg.textContent = "Published ✓"; $("title").value = ""; $("body").value = ""; loadList(); }
+        if (res.ok) { msg.className = "msg ok"; msg.textContent = "Published ✓ — live on the site in about a minute."; $("title").value = ""; $("body").value = ""; loadList(); }
         else if (res.status === 401) { msg.className = "msg err"; msg.textContent = "Session expired — log in again."; show(false); }
         else { msg.className = "msg err"; msg.textContent = (res.j && res.j.error) || "Failed to publish."; }
       })

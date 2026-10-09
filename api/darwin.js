@@ -33,6 +33,7 @@ const UA = "Mozilla/5.0 (compatible; ManPatelPortfolio/1.0; +https://man-patel-p
 const FRESH_MS = 60 * 60 * 1000; // quotes update daily; refetch at most hourly
 const ECB_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
 const CFD_URL = "https://www.darwinex.com/api/accounting/profitsResume/looserUsersPercentage";
+const FRED_SP500 = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500&cosd=";
 
 async function kv(cmd) {
   if (!KV_URL || !KV_TOKEN) return null;
@@ -128,6 +129,46 @@ async function fetchCfdLossPct() {
   } catch (_) { return null; }
 }
 
+// S&P 500 closes from FRED, used ONLY to compute KBAD's correlation and beta.
+// S&P Dow Jones Indices prohibits reproducing the index, so no index values or
+// index returns ever leave this function's caller. Never rejects.
+async function fetchSp500() {
+  try {
+    const from = new Date(Date.now() - 5 * 365 * 864e5).toISOString().slice(0, 10);
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 5000);
+    const r = await fetch(FRED_SP500 + from, { headers: { "User-Agent": UA }, signal: ac.signal });
+    clearTimeout(timer);
+    if (!r.ok) return null;
+    const closes = new Map();
+    for (const line of (await r.text()).split("\n").slice(1)) {
+      const [d, v] = line.trim().split(",");
+      const x = parseFloat(v); // FRED marks holidays with "."
+      if (d && x > 0) closes.set(d, x);
+    }
+    return closes.size ? closes : null;
+  } catch (_) { return null; }
+}
+
+// Correlation and beta of KBAD's daily returns to the index, on the dates both
+// traded. An intraday last point (before the ~21:00 UTC close) is left out.
+function marketLink(series, closes) {
+  if (!closes) return null;
+  const last = series[series.length - 1];
+  const pts = (new Date(last.t).getUTCHours() < 20 ? series.slice(0, -1) : series).filter((p) => closes.has(p.d));
+  if (pts.length < 31) return null;
+  const k = [], m = [];
+  for (let i = 1; i < pts.length; i++) {
+    k.push(pts[i].q / pts[i - 1].q - 1);
+    m.push(closes.get(pts[i].d) / closes.get(pts[i - 1].d) - 1);
+  }
+  const mean = (xs) => xs.reduce((s, v) => s + v, 0) / xs.length;
+  const mk = mean(k), mm = mean(m);
+  let cov = 0, vk = 0, vm = 0;
+  for (let i = 0; i < k.length; i++) { cov += (k[i] - mk) * (m[i] - mm); vk += (k[i] - mk) ** 2; vm += (m[i] - mm) ** 2; }
+  return { index: "S&P 500", correlation: cov / Math.sqrt(vk * vm), beta: cov / vm, days: k.length, from: pts[0].d, to: pts[pts.length - 1].d };
+}
+
 // ECB euro reference rate (USD per 1 EUR). Never rejects.
 async function fetchEurUsd() {
   try {
@@ -202,7 +243,7 @@ function computeMetrics(series) {
 // Shared with /api/health, which checks the same sources daily.
 async function buildPayload(ticker) {
   const sourceUrl = "https://www.darwinex.com/invest/" + ticker;
-  const fx = fetchEurUsd(), cfd = fetchCfdLossPct();
+  const fx = fetchEurUsd(), cfd = fetchCfdLossPct(), sp = fetchSp500();
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 7000);
   const r = await fetch(sourceUrl, { headers: { "User-Agent": UA, Accept: "text/html" }, signal: ac.signal });
@@ -222,6 +263,7 @@ async function buildPayload(ticker) {
     activity: parseActivity(html),
     allocation: parseAllocation(html),
     cfdLossPct: await cfd,
+    benchmark: marketLink(series, await sp),
     metrics, monthly,
     series: series.map((p) => [p.d, p.q])
   };

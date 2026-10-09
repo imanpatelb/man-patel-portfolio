@@ -45,6 +45,21 @@ async function runChecks(ticker) {
   checks.push(check("Darwinex recognition found", p.recognition && p.recognition.bestRank, p.recognition ? "best rank #" + p.recognition.bestRank : "missing; band hidden", false));
   checks.push(check("Investor fees found", p.fees, p.fees ? p.fees.management + "% management, " + p.fees.performance + "% performance" : "missing; FAQ and factsheet show the stored fees", false));
 
+  checks.push(check("Benchmark data (FRED S&P 500)", p.benchmark && typeof p.benchmark.correlation === "number", p.benchmark ? "correlation " + p.benchmark.correlation.toFixed(2) + ", beta " + p.benchmark.beta.toFixed(2) + " over " + p.benchmark.days + " days" : "missing; market-link figures hidden", false));
+
+  // blog storage: fine-grained GitHub tokens expire, which would silently break publishing
+  if (process.env.GITHUB_TOKEN) {
+    try {
+      const repo = process.env.GITHUB_REPO || "imanpatelb/man-patel-portfolio", branch = process.env.GITHUB_BRANCH || "main";
+      const r = await fetch("https://api.github.com/repos/" + repo + "/contents/data/posts.json?ref=" + encodeURIComponent(branch), {
+        headers: { Authorization: "Bearer " + process.env.GITHUB_TOKEN, Accept: "application/vnd.github+json", "User-Agent": "ManPatelPortfolio" }
+      });
+      checks.push(check("Blog storage (GitHub token)", r.ok, r.ok ? "token works" : "HTTP " + r.status + "; publishing from /admin will fail until the token is replaced", true));
+    } catch (e) {
+      checks.push(check("Blog storage (GitHub token)", false, e.message, true));
+    }
+  }
+
   // the site's own endpoint, as visitors hit it
   try {
     const r = await fetch(SITE + "/api/darwin?ticker=" + encodeURIComponent(ticker));

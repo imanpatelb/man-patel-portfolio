@@ -48,7 +48,7 @@
           p.series = d.series; p.metrics = m; p.monthly = d.monthly;
           p.inception = d.inception; p.asOf = d.asOf; p.asOfTime = d.asOfTime; p.quote = d.quote; p.liveSynced = true;
           if (d.aum && typeof d.aum.totalEur === "number") { p.aum = d.aum.totalEur; p.aumParts = d.aum; }
-          p.activity = d.activity || null; p.allocation = d.allocation || null; p.recognition = d.recognition || null; p.fees = d.fees || null;
+          p.activity = d.activity || null; p.allocation = d.allocation || null; p.recognition = d.recognition || null; p.fees = d.fees || null; p.benchmark = d.benchmark || null;
           if (typeof d.cfdLossPct === "number") (CFG.config = CFG.config || {}).cfdLossPct = d.cfdLossPct;
         })
         .catch(function () { /* keep stored figures */ })
@@ -135,7 +135,7 @@
           real: real, live: !!p.liveSynced, asOf: p.asOf || null, asOfTime: p.asOfTime || null, metrics: p.metrics || null,
           aum: (typeof p.aum === "number" ? p.aum : null), aumParts: p.aumParts || null,
           inception: p.inception || null,
-          monthly: p.monthly || null, activity: p.activity || null, allocation: p.allocation || null, recognition: p.recognition || null, fees: p.fees || null
+          monthly: p.monthly || null, activity: p.activity || null, allocation: p.allocation || null, recognition: p.recognition || null, fees: p.fees || null, benchmark: p.benchmark || null
         };
         if (!refDates || c.dates.length < refDates.length) refDates = c.dates;
       });
@@ -467,6 +467,14 @@
         $("aWin").textContent = act.winningTrades != null ? (act.winningTrades * 100).toFixed(1) + "%" : "—";
         $("activityCard").hidden = false; any = true;
       }
+      // market link: correlation and beta only — S&P's terms forbid showing the index itself
+      var bm = d.live && d.benchmark;
+      if (bm && typeof bm.correlation === "number") {
+        $("mCorr").textContent = bm.correlation.toFixed(2);
+        $("mBeta").textContent = bm.beta.toFixed(2);
+        $("mDays").textContent = bm.days;
+        $("mktBlock").hidden = false; $("mNote").hidden = false;
+      }
       if (mix && mix.length) {
         // part-to-whole reads at a glance up to ~5 rows; fold the tail into "Other"
         var top = mix.length > 5 ? mix.slice(0, 4) : mix, rest = mix.length > 5 ? mix.slice(4) : [];
@@ -628,9 +636,10 @@
     var POSTS = [], byId = {}, currentFilter = "all";
 
     function loadPosts() {
-      fetch("/api/posts", { cache: "no-store" })
-        .then(function (r) { return r.json(); })
-        .then(function (d) { applyPosts((d && d.posts) || []); })
+      // the committed file; /api/posts commits to it and Vercel redeploys
+      fetch("data/posts.json", { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (d) { applyPosts(Array.isArray(d) ? d : []); })
         .catch(function () { applyPosts([]); });
     }
     function applyPosts(ps) {

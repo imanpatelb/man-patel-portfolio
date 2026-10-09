@@ -97,6 +97,8 @@
     if (a.investorsUsd) rows.push(["Investors", usd(a.investorsUsd) + " · " + a.investors]);
     if (act.trades != null) rows.push(["Trades", act.trades.toLocaleString("en-US") + (act.avgDuration ? " · avg " + fmtDur(act.avgDuration) : "")]);
     if (act.winningTrades != null) rows.push(["Winning trades", (act.winningTrades * 100).toFixed(1) + "%"]);
+    var bm = d.benchmark;
+    if (bm && typeof bm.correlation === "number") { rows.push(["Correlation to S&P 500", bm.correlation.toFixed(2)]); rows.push(["Beta to S&P 500", bm.beta.toFixed(2)]); }
     rows.push(["Inception", dLong(start)]);
     $("fsCap").innerHTML = rows.map(function (r) { return "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>"; }).join("");
 
@@ -126,6 +128,7 @@
     var underYear = (asOf - start) / 864e5 < 365;
     $("fsDisc").textContent = "Capital at risk. Past performance is not indicative of future results. Figures are calculated from Darwinex’s published daily quotes using Darwinex’s formulas and are before Darwinex’s fees; max drawdown is Darwinex’s intraday figure where deeper. " +
       (underYear ? "The track record is under one year, so annualised figures are extrapolated. " : "") +
+      (bm && typeof bm.correlation === "number" ? "Correlation and beta use daily returns against the S&P 500 (data: S&P Dow Jones Indices LLC via FRED). " : "") +
       "This factsheet is a personal track record, not investment advice or an offer to invest; investing in " + d.ticker + " happens on Darwinex, under its terms and risk warnings.";
 
     $("fsMail").textContent = conf.contactEmail || "mptraderx.capital@gmail.com";

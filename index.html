@@ -39,7 +39,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css?v=17">
+<link rel="stylesheet" href="assets/css/styles.css?v=18">
+<!-- Vercel Web Analytics: cookie-free page-view counts (see /privacy) -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 
@@ -196,7 +199,15 @@
         <div class="x-stat"><div class="k">Average trade</div><div class="v" id="aDur">&mdash;</div></div>
         <div class="x-stat"><div class="k">Winning trades</div><div class="v" id="aWin">&mdash;</div></div>
       </div>
-      <p class="x-note">From Darwinex. Winning trades counts individual trades; the win rate above counts days.</p>
+      <div class="x-sub" id="mktBlock" hidden>
+        <h3 class="x-title">Versus the S&amp;P 500</h3>
+        <div class="x-stats">
+          <div class="x-stat"><div class="k">Correlation</div><div class="v" id="mCorr">&mdash;</div></div>
+          <div class="x-stat"><div class="k">Beta</div><div class="v" id="mBeta">&mdash;</div></div>
+          <div class="x-stat"><div class="k">Days compared</div><div class="v" id="mDays">&mdash;</div></div>
+        </div>
+      </div>
+      <p class="x-note">From Darwinex. Winning trades counts individual trades; the win rate above counts days.<span id="mNote" hidden> Correlation and beta use daily returns; S&amp;P 500 data from S&amp;P Dow Jones Indices LLC via FRED.</span></p>
     </div>
     <div class="xcard" id="mixCard" hidden>
       <h3 class="x-title">What it trades</h3>
@@ -347,6 +358,6 @@
   </article>
 </div>
 
-<script src="assets/js/main.js?v=19" defer></script>
+<script src="assets/js/main.js?v=20" defer></script>
 </body>
 </html>

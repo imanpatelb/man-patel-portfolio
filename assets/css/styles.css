@@ -227,6 +227,7 @@ section{padding:90px 0}
 .x-stat .k{font-size:12.5px;color:var(--ink-soft)}
 .x-stat .v{font-family:var(--serif);font-size:26px;line-height:1.1;margin-top:4px}
 .x-note{margin:18px 0 0;font-size:12px;color:var(--ink-faint);line-height:1.5}
+.x-sub{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
 .mix{list-style:none;margin:0;padding:0;display:grid;gap:11px}
 .mix-row{display:grid;grid-template-columns:minmax(96px,9.5em) minmax(0,1fr) 3.4em;gap:12px;align-items:center}
 .mix-name{font-size:13.5px;color:var(--ink);line-height:1.25}
