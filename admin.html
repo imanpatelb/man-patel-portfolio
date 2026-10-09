@@ -126,8 +126,8 @@
     fetch("/api/posts", { method: "DELETE", headers: headers(), body: JSON.stringify({ id: "__check__" }) })
       .then(function (r) {
         if (r.status === 401) { $("loginMsg").textContent = "Wrong password."; pw = ""; return; }
-        if (!r.ok && r.status === 500) { $("loginMsg").textContent = "Blog storage isn't set up yet: add the GITHUB_TOKEN secret in Cloudflare."; return; }
-        if (!r.ok && r.status === 502) { $("loginMsg").textContent = "Can't reach GitHub: the GITHUB_TOKEN may have expired."; return; }
+        if (!r.ok && r.status === 500) { $("loginMsg").textContent = "Blog storage isn't set up yet."; return; }
+        if (!r.ok && r.status === 502) { $("loginMsg").textContent = "Can't reach blog storage right now. Try again in a minute."; return; }
         sessionStorage.setItem(KEY, pw); show(true);
       })
       .catch(function () { $("loginMsg").textContent = "Network error."; });

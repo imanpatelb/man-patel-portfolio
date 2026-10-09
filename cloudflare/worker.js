@@ -5,10 +5,10 @@
      cloudflare/build.mjs from an allow-list, so source and secrets never ship).
    - /api/* runs the same handlers in api/, which are written for Node-style
      req/res; runNode() adapts a fetch Request to them and back.
-   - Visitors never wait on slow or heavy work. The live Darwinex data and the
-     post list are served from a stored copy in KV (env.CACHE) and refreshed
-     behind the response (ctx.waitUntil), so a slow upstream or the free plan's
-     CPU limit can't hold up or break a page view.
+   - Visitors never wait on slow or heavy work. The live Darwinex data is served
+     from a stored copy in KV (env.CACHE) and refreshed behind the response
+     (ctx.waitUntil), so a slow upstream or the free plan's CPU limit can't hold
+     up or break a page view. Blog posts live in the same KV namespace.
    - The daily data check (api/health.js) runs on the cron in wrangler.jsonc.
    ===================================================================== */
 
@@ -20,7 +20,6 @@ const API = {
   health: () => import("../api/health.js")
 };
 const APEX = "manpateltrades.com";
-const POSTS_FRESH_MS = 5 * 60 * 1000;
 const SECURITY = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "SAMEORIGIN",
@@ -34,7 +33,7 @@ const SECURITY = {
 function syncEnv(env) { for (const k in env) if (typeof env[k] === "string") process.env[k] = env[k]; }
 async function handlerOf(name, env) {
   const m = await API[name](), h = m.default || m;
-  if (name === "darwin" && h.useKV) h.useKV(env.CACHE); // darwin.js keeps its last good copy here
+  if ((name === "darwin" || name === "posts") && h.useKV) h.useKV(env.CACHE); // the last good live data; the posts
   return h;
 }
 
@@ -102,32 +101,17 @@ async function edgeCached(key, ctx, make) {
   return out;
 }
 
-/* ----- posts: the stored list, refreshed from the repo behind the response ----- */
-async function refreshPosts(env, ctx, origin) {
-  if (!env.CACHE) return;
-  const r = await runNode(await handlerOf("posts", env), new Request(origin + "/api/posts"), ctx);
-  if (!r.ok) return;
-  const j = await r.json();
-  if (j.configured && Array.isArray(j.posts)) await env.CACHE.put("posts", JSON.stringify({ posts: j.posts, at: Date.now() }));
-}
-async function posts(request, env, ctx, url) {
-  const stored = env.CACHE ? await env.CACHE.get("posts", "json") : null;
-  const later = () => ctx.waitUntil(refreshPosts(env, ctx, url.origin).catch((e) => console.error("posts refresh failed", e.message)));
-  if (stored && Array.isArray(stored.posts)) {
-    if (Date.now() - stored.at > POSTS_FRESH_MS) later();
-    return new Response(JSON.stringify(stored.posts, null, 2), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-cache", ...SECURITY } });
-  }
-  later(); // nothing stored yet: serve the copy deployed with the site, and fetch the live list for next time
+/* ----- posts: the list /admin keeps in KV; the copy deployed with the site until there is one ----- */
+async function posts(request, env) {
+  const list = env.CACHE ? await env.CACHE.get("posts:list") : null;
+  if (list) return new Response(list, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-cache", ...SECURITY } });
   return secure(await env.ASSETS.fetch(request));
 }
 
 async function api(name, request, env, ctx, url) {
   const run = async () => runNode(await handlerOf(name, env), request, ctx);
   if (name === "darwin" && request.method === "GET") return edgeCached(new Request(url.toString()), ctx, run);
-  const res = await run();
-  // a publish or delete from /admin: store the new list straight away
-  if (name === "posts" && request.method !== "GET" && res.ok) ctx.waitUntil(refreshPosts(env, ctx, url.origin).catch(() => {}));
-  return res;
+  return run();
 }
 
 const worker = {
@@ -139,14 +123,14 @@ const worker = {
       return Response.redirect(url.toString(), 301);
     }
     syncEnv(env);
-    if (url.pathname === "/data/posts.json") return posts(request, env, ctx, url);
+    if (url.pathname === "/data/posts.json") return posts(request, env);
     const m = /^\/api\/([a-z]+)\/?$/.exec(url.pathname);
     if (m && API[m[1]]) return api(m[1], request, env, ctx, url);
     if (url.pathname.startsWith("/api/")) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "content-type": "application/json", ...SECURITY } });
     return secure(await env.ASSETS.fetch(request));
   },
 
-  // Daily: refresh the stored data, then run the data check. The health handler insists on a
+  // Daily: refresh the stored live data, then run the data check. The health handler insists on a
   // bearer secret, so it gets a one-off one. Its "site serves live data" check calls this site's
   // own address; a Worker can't reliably fetch its own domain, so those calls go straight to
   // worker.fetch (the same code visitors hit).
@@ -154,7 +138,6 @@ const worker = {
     syncEnv(env);
     const darwin = await handlerOf("darwin", env);
     for (const t of darwin.ALLOWED) { try { await darwin.refresh(t); } catch (e) { console.error("refresh failed", t, e.message); } }
-    try { await refreshPosts(env, ctx, "https://" + APEX); } catch (e) { console.error("posts refresh failed", e.message); }
     const secret = crypto.randomUUID(), realFetch = globalThis.fetch;
     process.env.CRON_SECRET = secret;
     globalThis.fetch = (input, init) => {

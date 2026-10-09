@@ -48,8 +48,7 @@ Variables and Secrets, or `npx wrangler secret put NAME`):
 | Secret | What for |
 |---|---|
 | `RESEND_API_KEY` | sending enquiry, subscribe and alert emails |
-| `ADMIN_PASSWORD` | logging in at `/admin` |
-| `GITHUB_TOKEN` | publishing posts: a fine-grained token with *Contents: Read and write* on this repo only |
+| `ADMIN_PASSWORD` | logging in at `/admin` (a copy is in the local, git-ignored `.env.local`) |
 
 `CONTACT_TO` / `CONTACT_FROM` default to the values in `api/contact.js`.
 
@@ -103,11 +102,18 @@ validation on both sides, and rate limiting.
 
 ## Posts and comments
 
-Posts are written at **`/admin`** (password: `ADMIN_PASSWORD`). Each publish or
-delete commits `data/posts.json` to this repo through the GitHub API, so posts have
-full history. The site serves the post list from the KV store and refreshes it from
-the repo right after each publish, so a new post is live within about a minute,
-with no redeploy.
+Posts are written at **`/admin`** (password: `ADMIN_PASSWORD`) and stored in the
+Worker's KV namespace under `posts:list`. The site serves `/data/posts.json` from
+there, so a new post is live within about a minute, with no redeploy and no token.
+The `data/posts.json` file in the repo is only the fallback copy shown if KV has no
+list. To back the posts up (or refresh that fallback), run:
+
+```bash
+npx wrangler kv key get --binding CACHE "posts:list" --remote > data/posts.json
+```
+
+(`api/posts.js` can also store posts in this GitHub repo, one commit per change,
+when it runs anywhere other than Cloudflare and `GITHUB_TOKEN` is set.)
 
 Comments use Giscus (GitHub Discussions), configured in `data/portfolios.json` →
 `config.comments`.

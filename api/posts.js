@@ -1,21 +1,21 @@
 /* =====================================================================
-   /api/posts — blog posts, stored as data/posts.json in the GitHub repo.
+   /api/posts — blog posts.
 
-   GET    -> { posts, configured }   (live copy, via the GitHub API; used by /admin)
+   GET    -> { posts, configured }   (the live list; used by /admin)
    POST   -> create a post   (Authorization: Bearer <ADMIN_PASSWORD>)
    DELETE -> delete a post   (Authorization: Bearer <ADMIN_PASSWORD>)
 
-   Every publish or delete is a commit, so posts have full history and
-   can't vanish with a database. The site serves /data/posts.json live from
-   the repo through this handler (cloudflare/worker.js, cached for a minute),
-   so new posts appear about a minute after publishing, with no rebuild.
+   Where they're stored:
+   - On Cloudflare (the live site): in the KV namespace that
+     cloudflare/worker.js hands over with useKV(), under "posts:list". The
+     site serves /data/posts.json from it, so a post is live within about
+     a minute (KV spreads worldwide that fast), with no rebuild and no token.
+   - Anywhere else: as data/posts.json in the GitHub repo, one commit per
+     change, which needs GITHUB_TOKEN (Contents: Read and write, this repo).
 
    Environment variables:
      ADMIN_PASSWORD — required; the password used on /admin
-     GITHUB_TOKEN   — required for writes; a fine-grained token with
-                      Contents: Read and write on this repository only
-     GITHUB_REPO    — optional (default imanpatelb/man-patel-portfolio)
-     GITHUB_BRANCH  — optional (default main)
+     GITHUB_TOKEN / GITHUB_REPO / GITHUB_BRANCH — the GitHub store only
    ===================================================================== */
 
 const TOKEN = process.env.GITHUB_TOKEN || "";
@@ -24,6 +24,9 @@ const BRANCH = process.env.GITHUB_BRANCH || "main";
 const FILE = "data/posts.json";
 const API = "https://api.github.com/repos/" + REPO + "/contents/" + FILE;
 const TAGS = ["risk", "process", "markets", "letter"];
+const KV_KEY = "posts:list";
+let CF_KV = null; // set on Cloudflare; otherwise posts live in the repo
+function ready() { return !!(CF_KV || TOKEN); }
 
 function gh(method, url, body) {
   return fetch(url, {
@@ -41,6 +44,7 @@ function gh(method, url, body) {
 
 // Current posts and the file's sha (null if the file doesn't exist yet).
 async function readPosts() {
+  if (CF_KV) { const v = await CF_KV.get(KV_KEY, "json"); return { posts: Array.isArray(v) ? v : [], sha: null }; }
   const r = await gh("GET", API + "?ref=" + encodeURIComponent(BRANCH));
   if (r.status === 404) return { posts: [], sha: null };
   if (!r.ok) throw new Error("github read " + r.status);
@@ -51,6 +55,7 @@ async function readPosts() {
 }
 
 async function writePosts(posts, sha, message) {
+  if (CF_KV) { await CF_KV.put(KV_KEY, JSON.stringify(posts)); return; }
   const r = await gh("PUT", API, {
     message,
     content: Buffer.from(JSON.stringify(posts, null, 2) + "\n", "utf8").toString("base64"),
@@ -90,19 +95,19 @@ async function readBody(req) {
   });
 }
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method === "GET") {
-    if (!TOKEN) return res.status(200).json({ posts: [], configured: false });
+    if (!ready()) return res.status(200).json({ posts: [], configured: false });
     try { return res.status(200).json({ posts: (await readPosts()).posts, configured: true }); }
-    catch (e) { console.error(e.message); return res.status(502).json({ error: "Couldn't read posts from GitHub." }); }
+    catch (e) { console.error(e.message); return res.status(502).json({ error: "Couldn't read the posts." }); }
   }
 
   if (req.method === "POST" || req.method === "DELETE") {
     if (!authed(req)) return res.status(401).json({ error: "Unauthorized" });
-    if (!TOKEN) return res.status(500).json({ error: "Blog storage isn't set up yet (GITHUB_TOKEN)." });
+    if (!ready()) return res.status(500).json({ error: "Blog storage isn't set up yet." });
     const b = await readBody(req);
 
     try {
@@ -131,10 +136,13 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, removed });
     } catch (e) {
       console.error("posts write failed", e.message);
-      return res.status(502).json({ error: "Couldn't save to GitHub. Check that GITHUB_TOKEN is valid." });
+      return res.status(502).json({ error: "Couldn't save the post. Try again in a minute." });
     }
   }
 
   res.setHeader("Allow", "GET, POST, DELETE");
   return res.status(405).json({ error: "Method not allowed" });
-};
+}
+
+module.exports = handler;
+module.exports.useKV = (ns) => { CF_KV = ns || null; };
