@@ -90,7 +90,9 @@ function mailHint(e) {
   if (e.status === 403) return "manpateltrades.com isn't verified in Resend yet.";
   return "Resend said: " + e.message;
 }
-function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "post"; }
+// the post's address: /notes/<slug>; apostrophes vanish rather than split words ("I'm" -> "im")
+function slugify(s) { return String(s).toLowerCase().replace(/['’‘`]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "post"; }
+function uniqueSlug(base, posts) { let s = base, n = 2; while (posts.some((p) => p.slug === s)) s = base + "-" + n++; return s; }
 function clean(s, max) { return String(s == null ? "" : s).trim().slice(0, max); }
 
 async function readBody(req) {
@@ -134,7 +136,7 @@ async function handler(req, res) {
           catch (e) { console.error("test email failed", e.message); return res.status(502).json({ error: "Couldn't send the test. " + mailHint(e) }); }
           return res.status(200).json({ ok: true, tested: true });
         }
-        await update((posts) => ({ posts: [post].concat(posts), message: "Publish post: " + title }));
+        await update((posts) => { post.slug = uniqueSlug(post.slug, posts); return { posts: [post].concat(posts), message: "Publish post: " + title }; });
         // the post is live either way; an email that fails is reported, not fatal
         let emailed = false, emailError = null;
         if (b.email === true) {

@@ -12,6 +12,8 @@
    - The daily data check (api/health.js) runs on the cron in wrangler.jsonc.
    ===================================================================== */
 
+import { postPage, notFoundPage, feed, sitemap, slugOf } from "./pages.js";
+
 const API = {
   darwin: () => import("../api/darwin.js"),
   posts: () => import("../api/posts.js"),
@@ -108,6 +110,34 @@ async function posts(request, env) {
   return secure(await env.ASSETS.fetch(request));
 }
 
+/* ----- post pages, feed and sitemap (cloudflare/pages.js) ----- */
+async function postList(env, origin) {
+  const list = env.CACHE ? await env.CACHE.get("posts:list", "json") : null;
+  if (Array.isArray(list)) return list;
+  const r = await env.ASSETS.fetch(new Request(origin + "/data/posts.json"));
+  return r.ok ? r.json() : [];
+}
+async function siteInfo(env, origin) {
+  let config = {};
+  try { const r = await env.ASSETS.fetch(new Request(origin + "/data/portfolios.json")); if (r.ok) config = (await r.json()).config || {}; } catch (_) { /* defaults below */ }
+  let cfd = config.cfdLossPct;
+  try { const live = env.CACHE && await env.CACHE.get("darwin:KBAD", "json"); if (live && typeof live.cfdLossPct === "number") cfd = live.cfdLossPct; } catch (_) { /* stored figure */ }
+  return { origin, comments: config.comments, x: config.x, cfdPct: typeof cfd === "number" ? cfd.toFixed(2) : "53.84" };
+}
+function page(body, type, status) {
+  return new Response(body, { status: status || 200, headers: { "content-type": type, "cache-control": "public, max-age=60", ...SECURITY } });
+}
+async function notes(url, env) {
+  const origin = url.origin, path = url.pathname;
+  if (path === "/notes" || path === "/notes/") return Response.redirect(origin + "/#notes", 301);
+  const posts = await postList(env, origin);
+  if (path === "/notes/feed.xml") return page(feed(posts, origin), "application/rss+xml; charset=utf-8");
+  const m = /^\/notes\/([a-z0-9-]+)\/?$/.exec(path), post = m && posts.find((p) => slugOf(p) === m[1]);
+  const info = await siteInfo(env, origin);
+  if (!post) return page(notFoundPage(origin, info.cfdPct), "text/html; charset=utf-8", 404);
+  return page(postPage(post, posts, info), "text/html; charset=utf-8");
+}
+
 async function api(name, request, env, ctx, url) {
   const run = async () => runNode(await handlerOf(name, env), request, ctx);
   if (name === "darwin" && request.method === "GET") return edgeCached(new Request(url.toString()), ctx, run);
@@ -124,6 +154,8 @@ const worker = {
     }
     syncEnv(env);
     if (url.pathname === "/data/posts.json") return posts(request, env);
+    if (url.pathname === "/notes" || url.pathname.startsWith("/notes/")) return notes(url, env);
+    if (url.pathname === "/sitemap.xml") return page(sitemap(await postList(env, url.origin), url.origin), "application/xml; charset=utf-8");
     const m = /^\/api\/([a-z]+)\/?$/.exec(url.pathname);
     if (m && API[m[1]]) return api(m[1], request, env, ctx, url);
     if (url.pathname.startsWith("/api/")) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "content-type": "application/json", ...SECURITY } });

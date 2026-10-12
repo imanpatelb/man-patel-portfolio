@@ -13,6 +13,7 @@ the public files.
 │   ├── js/main.js          # data, charts, forms
 │   ├── js/motion.js        # rolling numbers, reveals, hero line field, pointer effects
 │   ├── js/factsheet.js     # the A4 factsheet
+│   ├── js/post.js          # post pages: comments, subscribe, copy link
 │   ├── fonts/              # Fraunces, Inter, IBM Plex Mono (SIL Open Font License)
 │   └── img/og.png          # social share image
 ├── data/portfolios.json    # config + stored fallback snapshot
@@ -20,6 +21,7 @@ the public files.
 ├── api/                    # functions: darwin, posts, contact, subscribe, health
 ├── cloudflare/
 │   ├── worker.js           # entry point: routes /api/*, caching, posts, daily cron
+│   ├── pages.js            # post pages, RSS feed, sitemap
 │   ├── build.mjs           # copies the public files (an allow-list) into dist/
 │   └── _headers            # security and cache headers for static files
 ├── wrangler.jsonc          # Cloudflare config: domain, KV store, cron
@@ -125,8 +127,15 @@ npx wrangler kv key get --binding CACHE "posts:list" --remote > data/posts.json
 (`api/posts.js` can also store posts in this GitHub repo, one commit per change,
 when it runs anywhere other than Cloudflare and `GITHUB_TOKEN` is set.)
 
-Comments use Giscus (GitHub Discussions), configured in `data/portfolios.json` →
-`config.comments`.
+Each post has its own page at **`/notes/<slug>`**, built by the Worker
+(`cloudflare/pages.js`) with its own title, description, canonical link and share card
+(Open Graph and X), so links shared on X, LinkedIn or WhatsApp show a proper preview.
+The page also carries share links, the subscribe box, comments and the disclaimers. The
+Worker also serves **`/notes/feed.xml`** (RSS) and **`/sitemap.xml`**, both rebuilt from
+the post list, so new posts are listed with no redeploy. Letters link to the post's page.
+
+Comments use Giscus (GitHub Discussions), one thread per post (keyed by its slug),
+configured in `data/portfolios.json` → `config.comments`.
 
 ---
 

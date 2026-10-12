@@ -1010,7 +1010,7 @@
     /* ===================== notes / posts ===================== */
     var listEl = $("notesList");
     function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-    var POSTS = [], byId = {}, currentFilter = "all";
+    var POSTS = [], currentFilter = "all";
 
     function loadPosts() {
       // the post list: /api/posts commits it to the repo, and the site serves it live from there
@@ -1022,7 +1022,6 @@
     function applyPosts(ps) {
       if (ps.length) { POSTS = ps.map(function (p) { p.isoDate = true; return p; }); }
       else { POSTS = NOTES.map(function (n) { return { id: null, date: n.date, isoDate: false, tag: n.tag, title: n.title, body: null }; }); }
-      byId = {}; POSTS.forEach(function (p) { if (p.id) byId[p.id] = p; });
       renderNotes(currentFilter);
     }
     function renderNotes(f) {
@@ -1031,60 +1030,15 @@
       var rows = POSTS.filter(function (p) { return f === "all" || p.tag === f; });
       listEl.innerHTML = rows.map(function (p) {
         var d = (p.isoDate === false) ? p.date : fdate(parseISO(p.date));
-        var click = p.body ? " note-link" : "";
-        var attrs = p.id ? ' data-id="' + esc(p.id) + '"' : "";
-        return '<div class="note' + click + '"' + attrs + '><span class="nd">' + esc(d) + '</span><span class="nt">' + esc(p.title) + '</span><span class="ntag">' + esc(p.tag) + '</span></div>';
+        var inner = '<span class="nd">' + esc(d) + '</span><span class="nt">' + esc(p.title) + '</span><span class="ntag">' + esc(p.tag) + "</span>";
+        // published posts open on their own page (/notes/<slug>); the stored sample notes have no page
+        return p.slug ? '<a class="note note-link" href="/notes/' + esc(p.slug) + '">' + inner + "</a>" : '<div class="note">' + inner + "</div>";
       }).join("") || (none
         ? '<p class="notes-empty">The first notes are on their way &mdash; subscribe below to get them by email.</p>'
         : '<p class="notes-empty">Nothing under this topic yet.</p>');
     }
     loadPosts();
     $("notesFilter").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; currentFilter = b.dataset.f;[].forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); }); renderNotes(currentFilter); });
-
-    /* ----- post modal + Giscus comments ----- */
-    var modal = $("postModal"), pmTitle = $("pmTitle"), pmBody = $("pmBody"), pmDate = $("pmDate"), pmTag = $("pmTag");
-    function renderBody(t) {
-      return esc(t).split(/\n{2,}/).map(function (blk) {
-        blk = blk.trim(); if (!blk) return "";
-        if (/^##\s+/.test(blk)) return "<h3>" + blk.replace(/^##\s+/, "") + "</h3>";
-        blk = blk.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
-        return "<p>" + blk + "</p>";
-      }).join("");
-    }
-    function mountGiscus(term) {
-      var c = $("giscus"), note = $("pmCnote"); c.innerHTML = "";
-      var gc = CONFIG.comments || {};
-      if (!(gc.repo && gc.repoId && gc.categoryId)) { note.hidden = false; return; }
-      note.hidden = true;
-      var s = document.createElement("script");
-      s.src = "https://giscus.app/client.js";
-      s.setAttribute("data-repo", gc.repo);
-      s.setAttribute("data-repo-id", gc.repoId);
-      s.setAttribute("data-category", gc.category || "Announcements");
-      s.setAttribute("data-category-id", gc.categoryId);
-      s.setAttribute("data-mapping", "specific");
-      s.setAttribute("data-term", term);
-      s.setAttribute("data-strict", "1");
-      s.setAttribute("data-reactions-enabled", "1");
-      s.setAttribute("data-input-position", "top");
-      s.setAttribute("data-theme", themeNow() === "dark" ? "dark" : (gc.theme || "light"));
-      s.setAttribute("data-lang", "en");
-      s.crossOrigin = "anonymous"; s.async = true;
-      c.appendChild(s);
-    }
-    function openPost(p) {
-      pmDate.textContent = (p.isoDate === false) ? p.date : fdate(parseISO(p.date));
-      pmTag.textContent = p.tag;
-      pmTitle.textContent = p.title;
-      pmBody.innerHTML = renderBody(p.body || "");
-      modal.hidden = false; document.body.style.overflow = "hidden";
-      mountGiscus(p.slug || p.id || p.title);
-    }
-    function closePost() { modal.hidden = true; document.body.style.overflow = ""; $("giscus").innerHTML = ""; }
-    listEl.addEventListener("click", function (e) { var n = e.target.closest(".note-link"); if (!n) return; var p = byId[n.dataset.id]; if (p) openPost(p); });
-    $("postClose").addEventListener("click", closePost);
-    $("postCloseX").addEventListener("click", closePost);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !modal.hidden) closePost(); });
 
     /* ===================== contact form -> /api/contact ===================== */
     (function contact() {

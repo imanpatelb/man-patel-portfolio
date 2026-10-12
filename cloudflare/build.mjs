@@ -3,7 +3,7 @@
 import { cpSync, mkdirSync, rmSync } from "node:fs";
 
 const OUT = "dist";
-const FILES = ["index.html", "privacy.html", "terms.html", "factsheet.html", "admin.html", "robots.txt", "sitemap.xml"];
+const FILES = ["index.html", "privacy.html", "terms.html", "factsheet.html", "admin.html", "robots.txt"];
 const DIRS = ["assets", "data"];
 
 rmSync(OUT, { recursive: true, force: true });

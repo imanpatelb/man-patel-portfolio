@@ -410,31 +410,12 @@ section{padding:90px 0}
 .sub-wrap{flex:1;min-width:260px}
 .subscribe .form-status:empty{display:none}
 
-/* post modal + comments */
 .note-link{cursor:pointer}
 .note-link .nt{transition:color .2s}
 .note-link:hover .nt{color:var(--sage)}
 .note-link::after{content:"\2192";font-family:var(--mono);font-size:13px;color:var(--sage);flex:none;opacity:0;transform:translateX(-8px);transition:opacity .25s,transform .4s cubic-bezier(.16,1,.3,1)}
 @media (hover:hover){.note-link:hover::after{opacity:1;transform:none}}
-.modal{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
-.modal-backdrop{position:fixed;inset:0;background:rgba(var(--shadow),.5);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
-.modal-card{position:relative;z-index:1;background:var(--paper);border:1px solid var(--line);border-radius:6px;max-width:680px;width:100%;padding:42px 44px;box-shadow:0 30px 80px rgba(var(--shadow),.25);animation:modalIn .55s cubic-bezier(.16,1,.3,1)}
-@keyframes modalIn{from{opacity:0;transform:translateY(22px) scale(.98);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
-.modal-backdrop{animation:fadeIn .35s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.modal-x{position:absolute;top:12px;right:16px;background:none;border:0;font-size:26px;line-height:1;color:var(--ink-faint);cursor:pointer;padding:4px 8px}
-.modal-x:hover{color:var(--ink)}
-.pm-meta{display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
-.pm-meta span:last-child{color:var(--sage)}
-.modal-card h2{font-family:var(--serif);font-size:30px;line-height:1.18;margin-bottom:22px}
-.pm-body{font-size:16px;line-height:1.75;color:var(--ink)}
-.pm-body p{margin:0 0 16px}
-.pm-body h3{font-family:var(--serif);font-size:20px;margin:26px 0 10px}
-.pm-body strong{font-weight:600}
-.pm-comments{margin-top:36px;padding-top:24px;border-top:1px solid var(--line)}
-.pm-ch{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:400;margin-bottom:16px}
-.pm-cnote{font-size:13px}
-@media(max-width:640px){.modal-card{padding:34px 24px}.modal{padding:0}.modal-card{border-radius:0;min-height:100%}}
 
 .enq{background:var(--paper2)}
 .enq-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
@@ -512,6 +493,32 @@ footer{border-top:1px solid var(--line);padding:54px 0 60px}
 /* live pulse marking the latest point on the equity curve */
 #endring{fill:none;transform-box:fill-box;transform-origin:center;animation:endpulse 2.6s ease-out infinite}
 @keyframes endpulse{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(3.2);opacity:0}}
+
+/* post pages: /notes/<slug> (cloudflare/pages.js) */
+.post-top{max-width:720px}
+.post-top-r{display:flex;align-items:center;gap:18px}
+.post{max-width:720px;margin:0 auto;padding:44px 28px 56px}
+.post-meta{display:flex;gap:14px;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:16px}
+.post-tag{color:var(--sage)}
+.post h1{font-size:clamp(32px,5.2vw,48px);font-weight:300;line-height:1.1;letter-spacing:-.015em;margin-bottom:30px}
+.post-body{font-size:17.5px;line-height:1.78;color:var(--ink)}
+.post-body p{margin:0 0 20px}
+.post-body h2{font-family:var(--serif);font-size:25px;font-weight:400;line-height:1.25;margin:40px 0 12px}
+.post-body strong{font-weight:600}
+.post-lead{font-size:17px;color:var(--ink-soft)}
+.post-lead a,.post-body a{color:var(--sage);border-bottom:1px solid var(--sage-line)}
+.post-share{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px}
+.post-share .ps-k{color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase}
+.post-share a,.post-share button{color:var(--sage);background:none;border:0;border-bottom:1px solid var(--sage-line);padding:0 0 1px;font:inherit;cursor:pointer;transition:border-color .2s}
+@media (hover:hover){.post-share a:hover,.post-share button:hover{border-color:var(--sage)}}
+.post-disc{font-size:12.5px;line-height:1.6;color:var(--ink-faint);margin:22px 0 0}
+.post-sub{margin-top:48px}
+.post-comments,.post-more{margin-top:52px}
+.pm-ch{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:400;margin-bottom:16px}
+.pm-cnote{font-size:13px}
+.post-more .note{color:inherit}
+.post-404 h1{margin-bottom:16px}
+.post-foot{max-width:720px}
 
 /* ===================== motion layer (see motion.js) ===================== */
 .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -638,6 +645,10 @@ footer{border-top:1px solid var(--line);padding:54px 0 60px}
 }
 @media(max-width:640px){
   .hc-wrap{display:none}
+  .post{padding:30px 20px 44px}
+  .post-body{font-size:16.5px}
+  .post-body h2{font-size:22px}
+  .post-top-r{gap:12px}
   .wrap{padding-left:20px;padding-right:20px}
   .nav-right{gap:0}
   .navlinks{display:none;position:absolute;top:66px;left:0;right:0;flex-direction:column;gap:0;background:var(--paper);border-bottom:1px solid var(--line);padding:8px 20px 16px}
@@ -694,9 +705,6 @@ footer{border-top:1px solid var(--line);padding:54px 0 60px}
   .sub-form{width:100%;gap:10px}
   .sub-form input[type=email]{flex:1 1 auto;min-width:0}
   .sub-form .btn{flex:0 0 auto;padding:12px 18px}
-  /* post modal */
-  .modal-card h2{font-size:24px}
-  .pm-body{font-size:15.5px}
 }
 @media(max-width:400px){
   .hero h1{font-size:34px}

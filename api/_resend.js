@@ -90,7 +90,7 @@ function shell(inner, foot) {
 
 // a post as a letter; `unsub` is the unsubscribe link (Resend fills it in for broadcasts)
 function letter(post, unsub) {
-  const url = site() + "/#notes";
+  const url = site() + (post.slug ? "/notes/" + post.slug : "/#notes");
   const html = shell(
     `<div style="font-family:${SANS};font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:${SAGE};margin-bottom:10px">${esc(post.tag || "letter")}</div>
 <h1 style="font-family:${SERIF};font-weight:400;font-size:28px;line-height:1.2;color:${INK};margin:0 0 22px">${esc(post.title)}</h1>

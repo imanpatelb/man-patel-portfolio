@@ -11,6 +11,7 @@
 <!-- apply a saved theme before first paint, so there's no light/dark flash -->
 <script>(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
 <link rel="canonical" href="https://manpateltrades.com/">
+<link rel="alternate" type="application/rss+xml" title="Man Patel — Notes" href="https://manpateltrades.com/notes/feed.xml">
 
 <!-- Open Graph / Twitter -->
 <meta property="og:title" content="Man Patel — Discretionary Trader">
@@ -38,7 +39,7 @@
 
 <link rel="preload" href="/assets/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/styles.css?v=22">
+<link rel="stylesheet" href="assets/css/styles.css?v=23">
 <noscript><style>.reveal,.stagger>*,.monthly .mo-cell{opacity:1!important;transform:none!important;filter:none!important}.hero-h .li,.sec-head .wi{transform:none!important}.setup .s-path{stroke-dashoffset:0!important}.scribble{clip-path:none!important}</style></noscript>
 </head>
 <body>
@@ -409,22 +410,8 @@
 
 <button class="totop" id="totop" aria-label="Back to top">&uarr;</button>
 
-<div class="modal" id="postModal" hidden>
-  <div class="modal-backdrop" id="postClose"></div>
-  <article class="modal-card" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
-    <button class="modal-x" id="postCloseX" aria-label="Close">&times;</button>
-    <div class="pm-meta"><span id="pmDate"></span><span id="pmTag"></span></div>
-    <h2 id="pmTitle"></h2>
-    <div class="pm-body" id="pmBody"></div>
-    <div class="pm-comments">
-      <h3 class="pm-ch">Comments</h3>
-      <div id="giscus"></div>
-      <p class="pm-cnote faint" id="pmCnote" hidden>Comments open soon — sign in with GitHub to join the conversation.</p>
-    </div>
-  </article>
-</div>
 
 <script src="assets/js/motion.js?v=1" defer></script>
-<script src="assets/js/main.js?v=25" defer></script>
+<script src="assets/js/main.js?v=26" defer></script>
 </body>
 </html>
