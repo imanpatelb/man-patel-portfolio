@@ -84,6 +84,39 @@ function authed(req) {
   const pw = process.env.ADMIN_PASSWORD || "";
   return pw.length > 0 && a.length > 0 && a === pw;
 }
+
+/* ----- guessing protection (on Cloudflare, where KV is available) -----
+   The password may be short, so wrong attempts are limited: 5 per device per
+   15 minutes, and 30 site-wide per hour, after which /admin is locked for the
+   rest of the hour and the owner gets one email about it. */
+const PER_IP = 5, PER_IP_TTL = 15 * 60, PER_HOUR = 30;
+function clientIp(req) { return String(req.headers["cf-connecting-ip"] || (req.headers["x-forwarded-for"] || "").split(",")[0] || "unknown").trim(); }
+function hourKey() { return new Date().toISOString().slice(0, 13); }
+async function locked(req) {
+  if (!CF_KV) return false;
+  const [ip, all] = await Promise.all([CF_KV.get("auth:ip:" + clientIp(req)), CF_KV.get("auth:hour:" + hourKey())]);
+  return (+ip || 0) >= PER_IP || (+all || 0) >= PER_HOUR;
+}
+async function failed(req) {
+  if (!CF_KV) return;
+  const ipKey = "auth:ip:" + clientIp(req), hKey = "auth:hour:" + hourKey();
+  const [ip, all] = await Promise.all([CF_KV.get(ipKey), CF_KV.get(hKey)]);
+  const n = (+all || 0) + 1;
+  await Promise.all([CF_KV.put(ipKey, String((+ip || 0) + 1), { expirationTtl: PER_IP_TTL }), CF_KV.put(hKey, String(n), { expirationTtl: 2 * 3600 })]);
+  if (n === PER_HOUR && process.env.RESEND_API_KEY) {
+    try {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + process.env.RESEND_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: process.env.CONTACT_FROM || "Man Patel website <site@manpateltrades.com>", to: [process.env.CONTACT_TO || "mptraderx.capital@gmail.com"],
+          subject: "Someone is trying to guess your /admin password",
+          text: PER_HOUR + " wrong passwords were tried on manpateltrades.com/admin in the last hour, so it's locked until the hour is up. If this wasn't you, change ADMIN_PASSWORD in Cloudflare (Workers & Pages → man-patel-portfolio → Settings → Variables and Secrets) to something longer."
+        })
+      });
+    } catch (_) { /* the lock works either way */ }
+  }
+}
 // what to tell /admin when Resend refuses an email
 function mailHint(e) {
   if (e.status === 401) return "The Resend API key can only send emails; letters need a full-access key.";
@@ -116,7 +149,8 @@ async function handler(req, res) {
   }
 
   if (req.method === "POST" || req.method === "DELETE") {
-    if (!authed(req)) return res.status(401).json({ error: "Unauthorized" });
+    if (await locked(req)) return res.status(429).json({ error: "Too many wrong passwords. Try again later." });
+    if (!authed(req)) { await failed(req); return res.status(401).json({ error: "Unauthorized" }); }
     if (!ready()) return res.status(500).json({ error: "Blog storage isn't set up yet." });
     const b = await readBody(req);
 

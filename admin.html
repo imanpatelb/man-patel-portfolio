@@ -140,6 +140,7 @@
     fetch("/api/posts", { method: "DELETE", headers: headers(), body: JSON.stringify({ id: "__check__" }) })
       .then(function (r) {
         if (r.status === 401) { $("loginMsg").textContent = "Wrong password."; pw = ""; return; }
+        if (r.status === 429) { $("loginMsg").textContent = "Too many wrong passwords — locked for a while. Try again later."; pw = ""; return; }
         if (!r.ok && r.status === 500) { $("loginMsg").textContent = "Blog storage isn't set up yet."; return; }
         if (!r.ok && r.status === 502) { $("loginMsg").textContent = "Can't reach blog storage right now. Try again in a minute."; return; }
         sessionStorage.setItem(KEY, pw); show(true);
@@ -160,7 +161,7 @@
     fetch("/api/posts", { method: "POST", headers: headers(), body: JSON.stringify(payload) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
       .then(function (res) {
-        if (res.status === 401) { msg.className = "msg err"; msg.textContent = "Session expired — log in again."; show(false); }
+        if (res.status === 401 || res.status === 429) { msg.className = "msg err"; msg.textContent = "Session expired — log in again."; show(false); }
         else if (!res.ok) { msg.className = "msg err"; msg.textContent = (res.j && res.j.error) || "Something went wrong."; }
         else done(res.j, msg);
       })
