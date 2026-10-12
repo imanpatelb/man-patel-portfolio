@@ -35,6 +35,9 @@
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
   .topbar a{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
   .linkbtn{background:none;border:0;color:var(--ink-soft);font-family:var(--mono);font-size:12px;cursor:pointer;text-decoration:underline}
+  .row label.cb{display:flex;align-items:center;gap:10px;margin:0;font-family:var(--sans);font-size:14.5px;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer}
+  .row .cb input{width:18px;height:18px;margin:0;accent-color:var(--sage)}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
   @media(max-width:560px){
     .admin{padding:32px 18px 64px}
     .panel{padding:20px}
@@ -80,8 +83,12 @@
         <textarea id="body" placeholder="Write here…"></textarea>
         <div class="hint">Blank line = new paragraph · ## subheading · **bold**</div>
       </div>
+      <div class="row">
+        <label class="cb"><input type="checkbox" id="emailIt"> Also email this post to subscribers</label>
+        <div class="hint">Use &ldquo;Send me a test&rdquo; first to see the email in your own inbox.</div>
+      </div>
       <div class="bar">
-        <button class="btn" id="publish">Publish</button>
+        <div class="actions"><button class="btn" id="publish">Publish</button><button class="btn ghost" id="testSend" type="button">Send me a test</button></div>
         <span class="msg" id="msg"></span>
       </div>
     </div>
@@ -136,20 +143,34 @@
 
   $("logout").addEventListener("click", function () { sessionStorage.removeItem(KEY); pw = ""; show(false); });
 
-  $("publish").addEventListener("click", function () {
+  function send(extra, busy, done) {
     var title = $("title").value.trim(), body = $("body").value.trim(), tag = $("tag").value;
     var msg = $("msg");
     if (title.length < 2 || body.length < 2) { msg.className = "msg err"; msg.textContent = "Title and body required."; return; }
-    $("publish").disabled = true; msg.className = "msg"; msg.textContent = "Publishing…";
-    fetch("/api/posts", { method: "POST", headers: headers(), body: JSON.stringify({ title: title, body: body, tag: tag }) })
+    var payload = { title: title, body: body, tag: tag };
+    for (var k in extra) payload[k] = extra[k];
+    $("publish").disabled = $("testSend").disabled = true; msg.className = "msg"; msg.textContent = busy;
+    fetch("/api/posts", { method: "POST", headers: headers(), body: JSON.stringify(payload) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
       .then(function (res) {
-        if (res.ok) { msg.className = "msg ok"; msg.textContent = "Published ✓ — live on the site in about a minute."; $("title").value = ""; $("body").value = ""; loadList(); }
-        else if (res.status === 401) { msg.className = "msg err"; msg.textContent = "Session expired — log in again."; show(false); }
-        else { msg.className = "msg err"; msg.textContent = (res.j && res.j.error) || "Failed to publish."; }
+        if (res.status === 401) { msg.className = "msg err"; msg.textContent = "Session expired — log in again."; show(false); }
+        else if (!res.ok) { msg.className = "msg err"; msg.textContent = (res.j && res.j.error) || "Something went wrong."; }
+        else done(res.j, msg);
       })
       .catch(function () { msg.className = "msg err"; msg.textContent = "Network error."; })
-      .finally(function () { $("publish").disabled = false; });
+      .finally(function () { $("publish").disabled = $("testSend").disabled = false; });
+  }
+  $("publish").addEventListener("click", function () {
+    var mail = $("emailIt").checked;
+    if (mail && !confirm("Publish this and email it to all subscribers? Emails can't be unsent.")) return;
+    send({ email: mail }, mail ? "Publishing and emailing…" : "Publishing…", function (j, msg) {
+      $("title").value = ""; $("body").value = ""; $("emailIt").checked = false; loadList();
+      if (mail && !j.emailed) { msg.className = "msg err"; msg.textContent = "Published ✓, but the email didn't go out: " + (j.emailError || "unknown error"); }
+      else { msg.className = "msg ok"; msg.textContent = mail ? "Published ✓ and sent to subscribers." : "Published ✓ — live on the site in about a minute."; }
+    });
+  });
+  $("testSend").addEventListener("click", function () {
+    send({ test: true }, "Sending a test…", function (j, msg) { msg.className = "msg ok"; msg.textContent = "Test sent to your inbox ✓ (nothing was published)."; });
   });
 
   $("plist").addEventListener("click", function (e) {

@@ -1,19 +1,28 @@
 /* =====================================================================
-   POST /api/subscribe — capture an email for letters/updates.
+   /api/subscribe — sign-ups for letters and notes (double opt-in).
 
-   Stores the subscriber in a Resend Audience when RESEND_AUDIENCE_ID is
-   set, and always notifies the owner by email. Uses native fetch — no
-   dependencies. Reuses the same RESEND_API_KEY as /api/contact.
+   POST {email}       -> emails a confirmation link; nothing is stored yet
+                         beyond the pending link (KV, 7 days)
+   GET ?confirm=token -> the link: adds the address to the "Letters" list
+                         in Resend (api/_resend.js), tells the owner, and
+                         redirects to /?subscribed=1#notes
+
+   Until the list can be used (no KV, or Resend can't send from the
+   domain yet), a sign-up falls back to emailing the owner, as before.
 
    Environment variables:
-     RESEND_API_KEY      — required (re_...)
-     RESEND_AUDIENCE_ID  — optional; create an Audience in Resend and paste its id
-     CONTACT_TO          — optional; owner notification recipient (default below)
-     CONTACT_FROM        — optional; verified sender (default below)
+     RESEND_API_KEY — required; full access for the list and letters
+     CONTACT_TO / CONTACT_FROM — owner notification (defaults below)
    ===================================================================== */
+
+const letters = require("./_resend.js");
 
 const TO_DEFAULT = "mptraderx.capital@gmail.com";
 const FROM_DEFAULT = "Portfolio Site <onboarding@resend.dev>";
+const PENDING_TTL = 7 * 24 * 3600; // seconds a confirmation link stays valid
+const DAILY_CAP = 80; // confirmation emails a day; Resend's free plan sends 100
+
+let CF_KV = null; // set on Cloudflare (cloudflare/worker.js)
 
 const HITS = new Map();
 const WINDOW_MS = 60 * 1000;
@@ -42,8 +51,63 @@ async function readBody(req) {
   });
 }
 
-module.exports = async function handler(req, res) {
+// the owner hears about every sign-up (confirmed, or the old-style fallback)
+async function notifyOwner(email, confirmed) {
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + process.env.RESEND_API_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: process.env.CONTACT_FROM || FROM_DEFAULT, to: [process.env.CONTACT_TO || TO_DEFAULT], reply_to: email,
+      subject: (confirmed ? "New subscriber confirmed: " : "New subscriber: ") + email,
+      html: '<div style="font-family:system-ui,sans-serif;font-size:15px;color:#23201B">' + (confirmed ? "Confirmed and added to the Letters list:" : "New newsletter subscriber:") + "<br><strong>" + esc(email) + "</strong></div>",
+      text: (confirmed ? "Confirmed subscriber: " : "New subscriber: ") + email
+    })
+  });
+  return r.ok;
+}
+
+// email a confirmation link; false if the list can't be used yet
+async function startOptIn(email) {
+  if (!CF_KV) return false;
+  try {
+    if (await CF_KV.get("sub:recent:" + email)) return true; // asked a moment ago: one email is enough
+    const dayKey = "sub:sent:" + new Date().toISOString().slice(0, 10);
+    const sent = +(await CF_KV.get(dayKey)) || 0;
+    if (sent >= DAILY_CAP) { const e = new Error("daily cap"); e.cap = true; throw e; }
+    const token = crypto.randomUUID().replace(/-/g, "");
+    await CF_KV.put("sub:pending:" + token, JSON.stringify({ email, at: Date.now() }), { expirationTtl: PENDING_TTL });
+    await letters.sendConfirm(email, token);
+    await CF_KV.put("sub:recent:" + email, "1", { expirationTtl: 600 });
+    await CF_KV.put(dayKey, String(sent + 1), { expirationTtl: 2 * 86400 });
+    return true;
+  } catch (e) {
+    if (e.cap) throw e;
+    console.error("confirmation email failed, falling back to notifying the owner:", e.message);
+    return false;
+  }
+}
+
+async function confirm(req, res) {
+  const site = process.env.SITE_URL || "https://manpateltrades.com";
+  const go = (result) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Location", site + "/?subscribed=" + result + "#notes");
+    return res.status(302).end();
+  };
+  const token = String(req.query.confirm || "").replace(/[^a-f0-9]/gi, "").slice(0, 64);
+  if (!CF_KV || !token) return go("expired");
+  const pending = await CF_KV.get("sub:pending:" + token, "json");
+  if (!pending || !pending.email) return go("expired");
+  try { await letters.addSubscriber(pending.email, CF_KV); }
+  catch (e) { console.error("add subscriber failed:", e.message); return go("error"); }
+  await CF_KV.delete("sub:pending:" + token);
+  try { await notifyOwner(pending.email, true); } catch (_) { /* the subscription itself worked */ }
+  return go("1");
+}
+
+async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
+  if (req.method === "GET" && req.query && req.query.confirm) return confirm(req, res);
   if (req.method !== "POST") { res.setHeader("Allow", "POST"); return res.status(405).json({ error: "Method not allowed" }); }
   if (rateLimited(clientIp(req), Date.now())) return res.status(429).json({ error: "Too many requests. Please try again shortly." });
 
@@ -52,42 +116,18 @@ module.exports = async function handler(req, res) {
   const honeypot = (body.company || "").toString().trim();
   if (honeypot) return res.status(200).json({ ok: true }); // bot trap
   if (!EMAIL_RE.test(email) || email.length > 200) return res.status(400).json({ error: "Please provide a valid email." });
+  if (!process.env.RESEND_API_KEY) { console.error("RESEND_API_KEY not set"); return res.status(500).json({ error: "Subscriptions not configured." }); }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) { console.error("RESEND_API_KEY not set"); return res.status(500).json({ error: "Subscriptions not configured." }); }
-  const audienceId = process.env.RESEND_AUDIENCE_ID;
-  const to = process.env.CONTACT_TO || TO_DEFAULT;
-  const from = process.env.CONTACT_FROM || FROM_DEFAULT;
-
-  let stored = false;
   try {
-    // 1) Add to Resend Audience if configured (the durable subscriber list)
-    if (audienceId) {
-      const r = await fetch("https://api.resend.com/audiences/" + audienceId + "/contacts", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, unsubscribed: false })
-      });
-      stored = r.ok || r.status === 409; // 409 = already a contact
-      if (!r.ok && r.status !== 409) console.error("Resend audience error", r.status, await r.text().catch(() => ""));
-    }
-
-    // 2) Always notify the owner so no signup is missed
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: from, to: [to], reply_to: email,
-        subject: "New subscriber: " + email,
-        html: '<div style="font-family:system-ui,sans-serif;font-size:15px;color:#23201B">New newsletter subscriber:<br><strong>' + esc(email) + "</strong></div>",
-        text: "New subscriber: " + email
-      })
-    }).then(r => { if (r.ok) stored = true; });
-
-    if (!stored) return res.status(502).json({ error: "Could not save your subscription. Please try again." });
-    return res.status(200).json({ ok: true });
+    if (await startOptIn(email)) return res.status(200).json({ ok: true, pending: true });
+    if (await notifyOwner(email, false)) return res.status(200).json({ ok: true });
+    return res.status(502).json({ error: "Could not save your subscription. Please try again." });
   } catch (err) {
+    if (err.cap) return res.status(429).json({ error: "Sign-ups are busy today. Please try again tomorrow." });
     console.error("subscribe error", err);
     return res.status(500).json({ error: "Unexpected error." });
   }
-};
+}
+
+module.exports = handler;
+module.exports.useKV = (ns) => { CF_KV = ns || null; };

@@ -33,7 +33,7 @@ const SECURITY = {
 function syncEnv(env) { for (const k in env) if (typeof env[k] === "string") process.env[k] = env[k]; }
 async function handlerOf(name, env) {
   const m = await API[name](), h = m.default || m;
-  if ((name === "darwin" || name === "posts") && h.useKV) h.useKV(env.CACHE); // the last good live data; the posts
+  if (h.useKV) h.useKV(env.CACHE); // darwin: last good data; posts: the posts; subscribe: pending sign-ups
   return h;
 }
 

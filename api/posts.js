@@ -3,6 +3,8 @@
 
    GET    -> { posts, configured }   (the live list; used by /admin)
    POST   -> create a post   (Authorization: Bearer <ADMIN_PASSWORD>)
+             { email: true } also sends it to the Letters list (api/_resend.js);
+             { test: true } only emails a preview to CONTACT_TO
    DELETE -> delete a post   (Authorization: Bearer <ADMIN_PASSWORD>)
 
    Where they're stored:
@@ -82,6 +84,12 @@ function authed(req) {
   const pw = process.env.ADMIN_PASSWORD || "";
   return pw.length > 0 && a.length > 0 && a === pw;
 }
+// what to tell /admin when Resend refuses an email
+function mailHint(e) {
+  if (e.status === 401) return "The Resend API key can only send emails; letters need a full-access key.";
+  if (e.status === 403) return "manpateltrades.com isn't verified in Resend yet.";
+  return "Resend said: " + e.message;
+}
 function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "post"; }
 function clean(s, max) { return String(s == null ? "" : s).trim().slice(0, max); }
 
@@ -120,8 +128,20 @@ async function handler(req, res) {
           id: crypto.randomUUID(), slug: slugify(title), title, body, tag,
           date: now.toISOString().slice(0, 10), createdAt: now.toISOString()
         };
+        // a preview to the owner's inbox; nothing is published
+        if (b.test === true) {
+          try { await require("./_resend.js").sendTest(post, process.env.CONTACT_TO || "mptraderx.capital@gmail.com"); }
+          catch (e) { console.error("test email failed", e.message); return res.status(502).json({ error: "Couldn't send the test. " + mailHint(e) }); }
+          return res.status(200).json({ ok: true, tested: true });
+        }
         await update((posts) => ({ posts: [post].concat(posts), message: "Publish post: " + title }));
-        return res.status(200).json({ ok: true, post });
+        // the post is live either way; an email that fails is reported, not fatal
+        let emailed = false, emailError = null;
+        if (b.email === true) {
+          try { await require("./_resend.js").sendLetter(post, CF_KV); emailed = true; }
+          catch (e) { console.error("letter failed", e.message); emailError = mailHint(e); }
+        }
+        return res.status(200).json({ ok: true, post, emailed, emailError });
       }
 
       const id = clean(b.id, 80);

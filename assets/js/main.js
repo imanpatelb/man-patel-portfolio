@@ -1129,6 +1129,13 @@
       var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       function setStatus(msg, kind) { statusEl.textContent = msg; statusEl.className = "form-status show " + (kind || ""); }
       em.addEventListener("input", function () { if (em.classList.contains("invalid") && EMAIL.test(em.value.trim())) em.classList.remove("invalid"); });
+      // back from the confirmation link (/api/subscribe?confirm=…)
+      var back = /[?&]subscribed=([a-z0-9]+)/.exec(location.search);
+      if (back) {
+        var said = { "1": ["You’re subscribed — thank you.", "ok"], expired: ["That link has expired. Enter your email again for a new one.", "err"], error: ["Something went wrong confirming. Please try again.", "err"] }[back[1]];
+        if (said) setStatus(said[0], said[1]);
+        try { history.replaceState(null, "", location.pathname + location.hash); } catch (_) { /* fine */ }
+      }
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         if (hp && hp.value) return;
@@ -1138,7 +1145,11 @@
         btn.disabled = true; var label = btn.textContent; btn.innerHTML = '<span class="spinner"></span>';
         fetch("/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: email, company: "" }) })
           .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok, body: b }; }); })
-          .then(function (res) { if (res.ok) { form.reset(); setStatus("You’re on the list — thank you.", "ok"); } else throw new Error((res.body && res.body.error) || "failed"); })
+          .then(function (res) {
+            if (!res.ok) throw new Error((res.body && res.body.error) || "failed");
+            form.reset();
+            setStatus(res.body && res.body.pending ? "Almost there — check your inbox and confirm." : "You’re on the list — thank you.", "ok");
+          })
           .catch(function () { setStatus("Couldn’t subscribe right now — please try again later.", "err"); })
           .finally(function () { btn.disabled = false; btn.textContent = label; });
       });

@@ -89,14 +89,22 @@ To add another DARWIN: add it to `portfolios` with `"live": true` and set a
 
 ---
 
-## Forms
+## Forms and letters
 
-Enquiries (`/api/contact`) and subscriptions (`/api/subscribe`) are emailed via
-[Resend](https://resend.com). Until a domain is verified in Resend, mail is sent
-from `onboarding@resend.dev`, which can only deliver to the Resend account's own
-inbox (the `CONTACT_TO` address, so it works). If sending fails, the enquiry form
-falls back to opening the visitor's email app. Spam protection: a honeypot field,
-validation on both sides, and rate limiting.
+Enquiries (`/api/contact`) are emailed to `CONTACT_TO` via [Resend](https://resend.com);
+if sending fails, the form falls back to opening the visitor's email app.
+
+**Letters** (`/api/subscribe`, `api/_resend.js`) use double opt-in. A sign-up gets a
+confirmation email, and the link adds the address to the **Letters** segment of
+contacts in Resend (free up to 1,000). In `/admin`, tick *Also email this post to
+subscribers* to send a post as a Resend broadcast, with an unsubscribe link and the
+risk disclaimer, from `letters@manpateltrades.com` (replies go to `CONTACT_TO`).
+*Send me a test* emails a preview to `CONTACT_TO` without publishing. This needs
+manpateltrades.com verified in Resend and a **full-access** `RESEND_API_KEY`;
+until then a sign-up just emails the owner. Confirmation emails are capped at 80 a
+day, inside Resend's free 100.
+
+Spam protection: a honeypot field, validation on both sides, and rate limiting.
 
 ---
 
