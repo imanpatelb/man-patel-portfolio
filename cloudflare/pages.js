@@ -7,7 +7,7 @@
    ===================================================================== */
 
 const SITE_NAME = "Man Patel";
-const STYLES = "/assets/css/styles.css?v=23";
+const STYLES = "/assets/css/styles.css?v=24";
 const POST_JS = "/assets/js/post.js?v=1";
 const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DISCLAIMER = "Capital at risk. Past performance is not indicative of future results. This is a personal note about my own trading, not investment advice or an offer to invest.";

@@ -94,7 +94,7 @@
     var a = d.aum || {}, act = d.activity || {}, rows = [];
     if (a.totalEur) rows.push(["Assets under management", eur(a.totalEur)]);
     if (a.darwinexCapitalEur) rows.push(["Darwinex’s own capital", eur(a.darwinexCapitalEur)]);
-    if (a.investorsUsd) rows.push(["Investors", usd(a.investorsUsd) + " · " + a.investors]);
+    if (a.investorsUsd) rows.push(["Investors", usd(a.investorsUsd) + (a.investors >= 10 ? " · " + a.investors : "")]); // count shown from 10, as on the site
     if (act.trades != null) rows.push(["Trades", act.trades.toLocaleString("en-US") + (act.avgDuration ? " · avg " + fmtDur(act.avgDuration) : "")]);
     if (act.winningTrades != null) rows.push(["Winning trades", (act.winningTrades * 100).toFixed(1) + "%"]);
     var bm = d.benchmark;

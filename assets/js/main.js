@@ -372,6 +372,24 @@
     }
 
     var f2 = function (v) { return v.toFixed(2); };
+    var INVESTOR_COUNT_FROM = 10;
+    // the worst Monday-to-Friday week, from the previous week's last close to this week's
+    function worstWeek(d) {
+      var ends = [];
+      d.dates.forEach(function (dt, i) {
+        var mon = new Date(dt); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+        var k = iso(mon), last = ends[ends.length - 1];
+        if (last && last.k === k) last.i = i; else ends.push({ k: k, i: i });
+      });
+      var worst = null;
+      ends.forEach(function (w, j) {
+        var from = j === 0 ? 0 : ends[j - 1].i;
+        if (w.i === from) return; // a first week with a single close has no return
+        var r = d.eq[w.i] / d.eq[from] - 1;
+        if (!worst || r < worst.r) worst = { r: r, from: parseISO(w.k) };
+      });
+      return worst;
+    }
     var fwin = function (v) { return (v * 100).toFixed(1) + "%"; };
     var lastMo = null;
     function render(morph) {
@@ -411,7 +429,8 @@
         var ap = full.aumParts;
         if (ap) {
           if (ap.darwinexCapitalEur) mh += metaItem("Darwinex capital", money(ap.darwinexCapitalEur));
-          if (ap.investorsUsd) mh += metaItem("Investors", "$" + Math.round(ap.investorsUsd).toLocaleString("en-US") + " · " + ap.investors);
+          // the head count only shows once it's a strength (INVESTOR_COUNT_FROM); the capital always does
+          if (ap.investorsUsd) mh += metaItem("Investors", "$" + Math.round(ap.investorsUsd).toLocaleString("en-US") + (ap.investors >= INVESTOR_COUNT_FROM ? " · " + ap.investors : ""));
         }
         if (full.inception) mh += metaItem("Inception", monthYear(full.inception));
         if (full.metrics && typeof full.metrics.annReturn === "number") mh += metaItem("Annualised", pct(full.metrics.annReturn));
@@ -434,6 +453,14 @@
       num($("sBest"), pct(s.best));
       num($("sWorst"), pct(s.worst));
       num($("sWin"), fwin(s.win));
+      // Calmar: annualised return per unit of maximum drawdown (both Darwinex's figures)
+      var mt = full.metrics, cal = mt && typeof mt.annReturn === "number" && mt.maxDrawdown < 0 ? mt.annReturn / -mt.maxDrawdown : null;
+      num($("sCal"), cal == null ? "—" : f2(cal));
+      // worst calendar week: real daily closes only, never the reconstructed snapshot
+      var ww = full.live ? worstWeek(full) : null, wwEl = $("sWw");
+      wwEl.className = "v tnum " + (ww && ww.r < 0 ? "neg" : "pos");
+      wwEl.title = ww ? "Week of " + fdate(ww.from) : "";
+      num(wwEl, ww ? pct(ww.r) : "—");
 
       // badges
       var liveLabel = $("liveLabel"), dataBadge = $("dataBadge");
@@ -898,6 +925,9 @@
       var now = dd.uw[dd.uw.length - 1];
       num($("ddNow"), now < 0 ? pctp(now) : "At a high");
       num($("ddLong"), periods.length ? Math.max.apply(null, periods.map(len)) + " days" : "—");
+      // peak back to a new high, averaged over the deepest periods in the table that have recovered
+      var healed = dd.top.filter(function (p) { return p.recI != null; });
+      num($("ddRec"), healed.length ? Math.round(healed.reduce(function (t, p) { return t + len(p); }, 0) / healed.length) + " days" : "—");
       $("ddA0").textContent = fdate(d.dates[0]); $("ddA1").textContent = fdate(last);
       // the headline max drawdown is Darwinex's intraday figure when that's deeper
       var deepClose = dd.top.length ? dd.top[0].depth : 0, headlineDD = d.metrics && d.metrics.maxDrawdown;

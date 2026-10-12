@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23F4F1E9'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%233F5648'/%3E%3C/svg%3E">
 <link rel="preload" href="/assets/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/styles.css?v=23">
+<link rel="stylesheet" href="assets/css/styles.css?v=24">
 <style>
   .admin{max-width:760px;margin:0 auto;padding:48px 28px 80px}
   .admin h1{font-family:var(--serif);font-size:30px;margin-bottom:4px}
@@ -38,6 +38,9 @@
   .row label.cb{display:flex;align-items:center;gap:10px;margin:0;font-family:var(--sans);font-size:14.5px;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer}
   .row .cb input{width:18px;height:18px;margin:0;accent-color:var(--sage)}
   .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .draft{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row .draft select{width:auto;min-width:190px}
+  .drafthelp{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:20px}
   @media(max-width:560px){
     .admin{padding:32px 18px 64px}
     .panel{padding:20px}
@@ -70,6 +73,10 @@
   <!-- editor -->
   <div id="app" hidden>
     <div class="panel">
+      <div class="row drafthelp"><label for="draftMonth">Monthly letter</label>
+        <div class="draft"><select id="draftMonth" disabled><option>Loading months…</option></select><button class="btn ghost" id="draftBtn" type="button" disabled>Draft from the numbers</button></div>
+        <div class="hint">Fills in the month&rsquo;s figures from the live data. You replace the [[bracketed]] parts with what you did and why.</div>
+      </div>
       <div class="row"><label for="title">Title</label><input id="title" type="text" placeholder="What a 9% drawdown actually feels like"></div>
       <div class="row"><label for="tag">Category</label>
         <select id="tag">
@@ -111,7 +118,7 @@
     $("loginPanel").hidden = authed;
     $("app").hidden = !authed;
     $("logout").hidden = !authed;
-    if (authed) loadList();
+    if (authed) { loadList(); if (!LIVE) loadMonths(); }
   }
   function headers() { return { "Content-Type": "application/json", "Authorization": "Bearer " + pw }; }
 
@@ -160,7 +167,71 @@
       .catch(function () { msg.className = "msg err"; msg.textContent = "Network error."; })
       .finally(function () { $("publish").disabled = $("testSend").disabled = false; });
   }
+  /* ----- monthly letter: the month's figures from /api/darwin, ready for commentary ----- */
+  var LIVE = null, MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"], MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function pc(v) { return (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(2) + "%"; }
+  function dayOf(s) { var p = s.split("-"); return +p[2] + " " + MO[+p[1] - 1]; }
+  function loadMonths() {
+    fetch("/api/darwin?ticker=KBAD").then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.series || !d.monthly) throw new Error("no data");
+      LIVE = d;
+      var now = new Date().toISOString().slice(0, 7), sel = $("draftMonth");
+      sel.innerHTML = d.monthly.slice().reverse().map(function (m) {
+        var y = m.m.slice(0, 4), mo = +m.m.slice(5) - 1;
+        return '<option value="' + m.m + '">' + MONTHS[mo] + " " + y + (m.m === now ? " (so far)" : "") + "</option>";
+      }).join("");
+      // default: the last finished month
+      var opts = [].slice.call(sel.options), done = opts.filter(function (o) { return o.value !== now; })[0];
+      if (done) sel.value = done.value;
+      sel.disabled = false; $("draftBtn").disabled = false;
+    }).catch(function () { $("draftMonth").innerHTML = "<option>Live data unavailable</option>"; });
+  }
+  function draft(ym) {
+    var s = LIVE.series, a = -1, b = -1;
+    s.forEach(function (x, i) { if (x[0].slice(0, 7) === ym) { if (a < 0) a = i; b = i; } });
+    if (a < 0) return null;
+    var from = Math.max(0, a - 1), best = null, worst = null, peak = s[from][1], mdd = 0, hi = 0;
+    for (var i = Math.max(1, a); i <= b; i++) {
+      var r = s[i][1] / s[i - 1][1] - 1;
+      if (!best || r > best.r) best = { r: r, d: s[i][0] };
+      if (!worst || r < worst.r) worst = { r: r, d: s[i][0] };
+    }
+    for (var j = from; j <= b; j++) { if (s[j][1] > peak) peak = s[j][1]; mdd = Math.min(mdd, s[j][1] / peak - 1); }
+    for (var k = 0; k <= b; k++) hi = Math.max(hi, s[k][1]);
+    var entry = LIVE.monthly.filter(function (m) { return m.m === ym; })[0], mret = entry ? entry.r : s[b][1] / s[from][1] - 1;
+    var ytd = LIVE.monthly.filter(function (m) { return m.m.slice(0, 4) === ym.slice(0, 4) && m.m <= ym; }).reduce(function (t, m) { return t * (1 + m.r); }, 1) - 1;
+    var since = s[b][1] / s[0][1] - 1, offHigh = s[b][1] / hi - 1, name = MONTHS[+ym.slice(5) - 1] + " " + ym.slice(0, 4);
+    var partial = ym === new Date().toISOString().slice(0, 7);
+    // in the year KBAD started, "year to date" and "since inception" are the same number: say it once
+    var first = s[0][0], sameYear = first.slice(0, 4) === ym.slice(0, 4);
+    var startMonth = MONTHS[+first.slice(5, 7) - 1] + " " + first.slice(0, 4);
+    var lines = [
+      "KBAD returned " + pc(mret) + " in " + name + (partial ? " so far" : "") + ". " + (sameYear ? "That takes it to " + pc(since) + " since inception in " + startMonth + "." : "That makes " + ym.slice(0, 4) + " " + pc(ytd) + " to date, and " + pc(since) + " since inception."),
+      "## The numbers",
+      ["**Month:** " + pc(mret), sameYear ? "" : "**Year to date:** " + pc(ytd), "**Since inception:** " + pc(since),
+        "**Deepest dip in the month (daily closes):** " + (mdd < -0.00005 ? pc(mdd) : "none"),
+        best ? "**Best day:** " + pc(best.r) + " (" + dayOf(best.d) + ")" : "", worst ? "**Worst day:** " + pc(worst.r) + " (" + dayOf(worst.d) + ")" : "",
+        "**At month end:** " + (offHigh < -0.00005 ? pc(offHigh) + " from the high" : "at a new high")].filter(Boolean).join("\n"),
+      "## What I did and why",
+      "[[Three or four lines: the main trades or setups, what worked, what didn't, and anything you changed.]]",
+      "## What I'm watching",
+      "[[Optional: markets or events on your radar for next month. Delete this part if you don't need it.]]",
+      "Figures are from KBAD's daily closing quotes on Darwinex, before fees. Capital at risk. Past performance is not indicative of future results."
+    ];
+    return { title: name + (partial ? " so far" : "") + ": " + pc(mret), body: lines.join("\n\n") };
+  }
+  $("draftBtn").addEventListener("click", function () {
+    if (!LIVE) return;
+    if (($("title").value.trim() || $("body").value.trim()) && !confirm("Replace what's in the editor with the draft?")) return;
+    var d = draft($("draftMonth").value), msg = $("msg");
+    if (!d) { msg.className = "msg err"; msg.textContent = "No data for that month."; return; }
+    $("title").value = d.title; $("body").value = d.body; $("tag").value = "letter";
+    msg.className = "msg ok"; msg.textContent = "Draft ready — replace the [[bracketed]] parts.";
+    $("body").focus();
+  });
+
   $("publish").addEventListener("click", function () {
+    if ($("body").value.indexOf("[[") !== -1 || $("title").value.indexOf("[[") !== -1) { $("msg").className = "msg err"; $("msg").textContent = "Replace the [[bracketed]] parts before publishing."; return; }
     var mail = $("emailIt").checked;
     if (mail && !confirm("Publish this and email it to all subscribers? Emails can't be unsent.")) return;
     send({ email: mail }, mail ? "Publishing and emailing…" : "Publishing…", function (j, msg) {

@@ -39,7 +39,7 @@
 
 <link rel="preload" href="/assets/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/styles.css?v=23">
+<link rel="stylesheet" href="assets/css/styles.css?v=24">
 <noscript><style>.reveal,.stagger>*,.monthly .mo-cell{opacity:1!important;transform:none!important;filter:none!important}.hero-h .li,.sec-head .wi{transform:none!important}.setup .s-path{stroke-dashoffset:0!important}.scribble{clip-path:none!important}</style></noscript>
 </head>
 <body>
@@ -188,9 +188,11 @@
       <div class="stat"><div class="k">Max drawdown</div><div class="v tnum neg" id="sDD">&mdash;</div></div>
       <div class="stat"><div class="k">Sharpe</div><div class="v tnum" id="sSh">&mdash;</div></div>
       <div class="stat"><div class="k">Sortino</div><div class="v tnum" id="sSo">&mdash;</div></div>
+      <div class="stat"><div class="k">Calmar</div><div class="v tnum" id="sCal">&mdash;</div></div>
       <div class="stat"><div class="k">Volatility (ann.)</div><div class="v tnum" id="sVo">&mdash;</div></div>
       <div class="stat"><div class="k">Best month</div><div class="v tnum pos" id="sBest">&mdash;</div></div>
       <div class="stat"><div class="k">Worst month</div><div class="v tnum neg" id="sWorst">&mdash;</div></div>
+      <div class="stat"><div class="k">Worst week</div><div class="v tnum neg" id="sWw">&mdash;</div></div>
       <div class="stat"><div class="k">Win rate (days)</div><div class="v tnum" id="sWin">&mdash;</div></div>
     </div>
 
@@ -228,6 +230,7 @@
         <div class="dd-stats">
           <div class="x-stat"><div class="k">From peak</div><div class="v" id="ddNow">&mdash;</div></div>
           <div class="x-stat"><div class="k">Longest</div><div class="v" id="ddLong">&mdash;</div></div>
+          <div class="x-stat"><div class="k">Avg. recovery</div><div class="v" id="ddRec">&mdash;</div></div>
         </div>
         <table class="dd-table">
           <thead><tr><th>Depth</th><th>Start</th><th class="dd-low">Low</th><th>Recovered</th><th class="dd-num">Days</th></tr></thead>
@@ -412,6 +415,6 @@
 
 
 <script src="assets/js/motion.js?v=1" defer></script>
-<script src="assets/js/main.js?v=26" defer></script>
+<script src="assets/js/main.js?v=27" defer></script>
 </body>
 </html>
