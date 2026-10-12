@@ -35,8 +35,12 @@
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
   .topbar a{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
   .linkbtn{background:none;border:0;color:var(--ink-soft);font-family:var(--mono);font-size:12px;cursor:pointer;text-decoration:underline}
-  .row label.cb{display:flex;align-items:center;gap:10px;margin:0;font-family:var(--sans);font-size:14.5px;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer}
-  .row .cb input{width:18px;height:18px;margin:0;accent-color:var(--sage)}
+  .modes{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line-strong);border-radius:3px;overflow:hidden}
+  .row .modes label{display:flex;align-items:center;margin:0;padding:9px 14px;font-family:var(--sans);font-size:14px;letter-spacing:0;text-transform:none;color:var(--ink-soft);cursor:pointer;border-left:1px solid var(--line-strong)}
+  .row .modes label:first-child{border-left:0}
+  .row .modes input{position:absolute;opacity:0;width:1px;height:1px}
+  .row .modes label:has(input:checked){background:var(--ink);color:var(--paper)}
+  .row .modes label:has(input:focus-visible){outline:2px solid var(--sage);outline-offset:-2px}
   .actions{display:flex;gap:10px;flex-wrap:wrap}
   .draft{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .row .draft select{width:auto;min-width:190px}
@@ -91,8 +95,13 @@
         <div class="hint">Blank line = new paragraph · ## subheading · **bold**</div>
       </div>
       <div class="row">
-        <label class="cb"><input type="checkbox" id="emailIt"> Also email this post to subscribers</label>
-        <div class="hint">Use &ldquo;Send me a test&rdquo; first to see the email in your own inbox.</div>
+        <label>Send as</label>
+        <div class="modes" role="radiogroup" aria-label="Send as">
+          <label><input type="radio" name="mode" value="post" checked> Post only</label>
+          <label><input type="radio" name="mode" value="both"> Post &amp; email</label>
+          <label><input type="radio" name="mode" value="email"> Email only</label>
+        </div>
+        <div class="hint">Post: on the site. Email: to your subscribers. &ldquo;Send me a test&rdquo; shows you the email first.</div>
       </div>
       <div class="bar">
         <div class="actions"><button class="btn" id="publish">Publish</button><button class="btn ghost" id="testSend" type="button">Send me a test</button></div>
@@ -231,14 +240,24 @@
     $("body").focus();
   });
 
+  /* ----- send as: post only, post & email, or email only ----- */
+  var MODES = {
+    post: { label: "Publish", busy: "Publishing…", extra: {} },
+    both: { label: "Publish & email", busy: "Publishing and emailing…", extra: { email: true }, ask: "Publish this and email it to all subscribers? Emails can't be unsent." },
+    email: { label: "Send email", busy: "Emailing subscribers…", extra: { emailOnly: true }, ask: "Email this to all subscribers? It won't appear on the site, and emails can't be unsent." }
+  };
+  function mode() { var c = document.querySelector('input[name="mode"]:checked'); return c ? c.value : "post"; }
+  [].forEach.call(document.querySelectorAll('input[name="mode"]'), function (r) { r.addEventListener("change", function () { $("publish").textContent = MODES[mode()].label; }); });
   $("publish").addEventListener("click", function () {
-    if ($("body").value.indexOf("[[") !== -1 || $("title").value.indexOf("[[") !== -1) { $("msg").className = "msg err"; $("msg").textContent = "Replace the [[bracketed]] parts before publishing."; return; }
-    var mail = $("emailIt").checked;
-    if (mail && !confirm("Publish this and email it to all subscribers? Emails can't be unsent.")) return;
-    send({ email: mail }, mail ? "Publishing and emailing…" : "Publishing…", function (j, msg) {
-      $("title").value = ""; $("body").value = ""; $("emailIt").checked = false; loadList();
-      if (mail && !j.emailed) { msg.className = "msg err"; msg.textContent = "Published ✓, but the email didn't go out: " + (j.emailError || "unknown error"); }
-      else { msg.className = "msg ok"; msg.textContent = mail ? "Published ✓ and sent to subscribers." : "Published ✓ — live on the site in about a minute."; }
+    if ($("body").value.indexOf("[[") !== -1 || $("title").value.indexOf("[[") !== -1) { $("msg").className = "msg err"; $("msg").textContent = "Replace the [[bracketed]] parts first."; return; }
+    var m = mode(), M = MODES[m];
+    if (M.ask && !confirm(M.ask)) return;
+    send(M.extra, M.busy, function (j, msg) {
+      $("title").value = ""; $("body").value = "";
+      document.querySelector('input[name="mode"][value="post"]').checked = true; $("publish").textContent = MODES.post.label;
+      loadList();
+      if (m === "both" && !j.emailed) { msg.className = "msg err"; msg.textContent = "Published ✓, but the email didn't go out: " + (j.emailError || "unknown error"); }
+      else { msg.className = "msg ok"; msg.textContent = m === "email" ? "Sent to subscribers ✓ (not published on the site)." : m === "both" ? "Published ✓ and sent to subscribers." : "Published ✓ — live on the site in about a minute."; }
     });
   });
   $("testSend").addEventListener("click", function () {

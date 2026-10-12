@@ -98,9 +98,10 @@ if sending fails, the form falls back to opening the visitor's email app.
 
 **Letters** (`/api/subscribe`, `api/_resend.js`) use double opt-in. A sign-up gets a
 confirmation email, and the link adds the address to the **Letters** segment of
-contacts in Resend (free up to 1,000). In `/admin`, tick *Also email this post to
-subscribers* to send a post as a Resend broadcast, with an unsubscribe link and the
-risk disclaimer, from `letters@manpateltrades.com` (replies go to `CONTACT_TO`).
+contacts in Resend (free up to 1,000). In `/admin`, **Send as** picks *Post only*, *Post & email* or *Email only*.
+Emails go out as a Resend broadcast, with an unsubscribe link and the risk disclaimer,
+from `letters@manpateltrades.com` (replies go to `CONTACT_TO`). *Email only* doesn't
+publish anything; its letter links to the home page.
 *Send me a test* emails a preview to `CONTACT_TO` without publishing. manpateltrades.com is verified in Resend (2026-10-12), so all site mail comes from
 the domain. Adding people to the list and sending letters needs a **full-access**
 `RESEND_API_KEY`. With a send-only key, confirmed sign-ups wait in KV

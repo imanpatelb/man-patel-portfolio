@@ -4,6 +4,7 @@
    GET    -> { posts, configured }   (the live list; used by /admin)
    POST   -> create a post   (Authorization: Bearer <ADMIN_PASSWORD>)
              { email: true } also sends it to the Letters list (api/_resend.js);
+             { emailOnly: true } only sends it to the list, without publishing;
              { test: true } only emails a preview to CONTACT_TO
    DELETE -> delete a post   (Authorization: Bearer <ADMIN_PASSWORD>)
 
@@ -169,6 +170,14 @@ async function handler(req, res) {
           try { await require("./_resend.js").sendTest(post, process.env.CONTACT_TO || "mptraderx.capital@gmail.com"); }
           catch (e) { console.error("test email failed", e.message); return res.status(502).json({ error: "Couldn't send the test. " + mailHint(e) }); }
           return res.status(200).json({ ok: true, tested: true });
+        }
+        // email only: a letter to subscribers that isn't published on the site
+        if (b.emailOnly === true) {
+          const L = require("./_resend.js"), letterOnly = Object.assign({}, post, { slug: null }); // no page to link to
+          try { await L.syncConfirmed(CF_KV); } catch (_) { /* reported below if the letter fails too */ }
+          try { await L.sendLetter(letterOnly, CF_KV); }
+          catch (e) { console.error("letter failed", e.message); return res.status(502).json({ error: "The email didn't go out. " + mailHint(e) }); }
+          return res.status(200).json({ ok: true, emailed: true, published: false });
         }
         await update((posts) => { post.slug = uniqueSlug(post.slug, posts); return { posts: [post].concat(posts), message: "Publish post: " + title }; });
         // the post is live either way; an email that fails is reported, not fatal

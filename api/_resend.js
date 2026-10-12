@@ -95,10 +95,10 @@ function letter(post, unsub) {
     `<div style="font-family:${SANS};font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:${SAGE};margin-bottom:10px">${esc(post.tag || "letter")}</div>
 <h1 style="font-family:${SERIF};font-weight:400;font-size:28px;line-height:1.2;color:${INK};margin:0 0 22px">${esc(post.title)}</h1>
 ${bodyHtml(post.body || "")}
-<p style="margin:26px 0 0"><a href="${url}" style="color:${SAGE}">Read on manpateltrades.com</a></p>`,
+<p style="margin:26px 0 0"><a href="${url}" style="color:${SAGE}">${post.slug ? "Read on manpateltrades.com" : "Visit manpateltrades.com"}</a></p>`,
     `${esc(DISCLAIMER)}<br><br>You're receiving this because you subscribed at manpateltrades.com. Reply to write back. <a href="${unsub}" style="color:${FAINT}">Unsubscribe</a>`
   );
-  const text = `${post.title}\n\n${bodyText(post.body || "")}\n\nRead on the site: ${url}\n\n--\n${DISCLAIMER}\nYou're receiving this because you subscribed at manpateltrades.com. Unsubscribe: ${unsub}`;
+  const text = `${post.title}\n\n${bodyText(post.body || "")}\n\n${post.slug ? "Read on the site" : "Visit the site"}: ${url}\n\n--\n${DISCLAIMER}\nYou're receiving this because you subscribed at manpateltrades.com. Unsubscribe: ${unsub}`;
   return { html, text };
 }
 
