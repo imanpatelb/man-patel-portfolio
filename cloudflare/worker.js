@@ -138,6 +138,9 @@ const worker = {
     syncEnv(env);
     const darwin = await handlerOf("darwin", env);
     for (const t of darwin.ALLOWED) { try { await darwin.refresh(t); } catch (e) { console.error("refresh failed", t, e.message); } }
+    // confirmed sign-ups still waiting for the Resend list (see api/_resend.js syncConfirmed)
+    try { const n = await (await import("../api/_resend.js")).default.syncConfirmed(env.CACHE); if (n) console.log("moved", n, "subscriber(s) to the Letters list"); }
+    catch (e) { console.error("subscriber sync waiting:", e.message); }
     const secret = crypto.randomUUID(), realFetch = globalThis.fetch;
     process.env.CRON_SECRET = secret;
     globalThis.fetch = (input, init) => {

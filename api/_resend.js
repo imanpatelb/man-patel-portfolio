@@ -131,4 +131,21 @@ async function sendConfirm(email, token) {
   if (!r.ok) throw fail(r, "send confirmation");
 }
 
-module.exports = { segmentId, addSubscriber, sendLetter, sendTest, sendConfirm, letter };
+// Confirmed sign-ups that couldn't join the Resend list yet (say, the key was send-only)
+// wait in KV under "sub:confirmed:<email>"; this moves them across once it works.
+async function syncConfirmed(kv) {
+  if (!kv || !kv.list) return 0;
+  let moved = 0, cursor;
+  do {
+    const page = await kv.list({ prefix: "sub:confirmed:", cursor });
+    for (const k of page.keys) {
+      await addSubscriber(k.name.slice("sub:confirmed:".length), kv); // throws while the key lacks access
+      await kv.delete(k.name);
+      moved++;
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return moved;
+}
+
+module.exports = { segmentId, addSubscriber, syncConfirmed, sendLetter, sendTest, sendConfirm, letter };

@@ -138,7 +138,9 @@ async function handler(req, res) {
         // the post is live either way; an email that fails is reported, not fatal
         let emailed = false, emailError = null;
         if (b.email === true) {
-          try { await require("./_resend.js").sendLetter(post, CF_KV); emailed = true; }
+          const L = require("./_resend.js");
+          try { await L.syncConfirmed(CF_KV); } catch (_) { /* reported below if the letter fails too */ }
+          try { await L.sendLetter(post, CF_KV); emailed = true; }
           catch (e) { console.error("letter failed", e.message); emailError = mailHint(e); }
         }
         return res.status(200).json({ ok: true, post, emailed, emailError });

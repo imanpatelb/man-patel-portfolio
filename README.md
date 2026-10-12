@@ -99,9 +99,11 @@ confirmation email, and the link adds the address to the **Letters** segment of
 contacts in Resend (free up to 1,000). In `/admin`, tick *Also email this post to
 subscribers* to send a post as a Resend broadcast, with an unsubscribe link and the
 risk disclaimer, from `letters@manpateltrades.com` (replies go to `CONTACT_TO`).
-*Send me a test* emails a preview to `CONTACT_TO` without publishing. This needs
-manpateltrades.com verified in Resend and a **full-access** `RESEND_API_KEY`;
-until then a sign-up just emails the owner. Confirmation emails are capped at 80 a
+*Send me a test* emails a preview to `CONTACT_TO` without publishing. manpateltrades.com is verified in Resend (2026-10-12), so all site mail comes from
+the domain. Adding people to the list and sending letters needs a **full-access**
+`RESEND_API_KEY`. With a send-only key, confirmed sign-ups wait in KV
+(`sub:confirmed:<email>`) and move to the list automatically, during the daily run
+or before a letter is sent, once the key has full access. Confirmation emails are capped at 80 a
 day, inside Resend's free 100.
 
 Spam protection: a honeypot field, validation on both sides, and rate limiting.

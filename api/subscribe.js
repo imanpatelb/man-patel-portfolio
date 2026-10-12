@@ -18,7 +18,7 @@
 const letters = require("./_resend.js");
 
 const TO_DEFAULT = "mptraderx.capital@gmail.com";
-const FROM_DEFAULT = "Portfolio Site <onboarding@resend.dev>";
+const FROM_DEFAULT = "Man Patel website <site@manpateltrades.com>";
 const PENDING_TTL = 7 * 24 * 3600; // seconds a confirmation link stays valid
 const DAILY_CAP = 80; // confirmation emails a day; Resend's free plan sends 100
 
@@ -76,7 +76,8 @@ async function startOptIn(email) {
     if (sent >= DAILY_CAP) { const e = new Error("daily cap"); e.cap = true; throw e; }
     const token = crypto.randomUUID().replace(/-/g, "");
     await CF_KV.put("sub:pending:" + token, JSON.stringify({ email, at: Date.now() }), { expirationTtl: PENDING_TTL });
-    await letters.sendConfirm(email, token);
+    try { await letters.sendConfirm(email, token); }
+    catch (e) { await CF_KV.delete("sub:pending:" + token); throw e; } // no email, so no link to keep
     await CF_KV.put("sub:recent:" + email, "1", { expirationTtl: 600 });
     await CF_KV.put(dayKey, String(sent + 1), { expirationTtl: 2 * 86400 });
     return true;
@@ -98,10 +99,13 @@ async function confirm(req, res) {
   if (!CF_KV || !token) return go("expired");
   const pending = await CF_KV.get("sub:pending:" + token, "json");
   if (!pending || !pending.email) return go("expired");
+  // Confirmed either way: if the Resend list can't take them yet (a send-only key, or Resend
+  // is down), they wait in KV and api/_resend.js syncConfirmed() moves them across later.
   try { await letters.addSubscriber(pending.email, CF_KV); }
-  catch (e) { console.error("add subscriber failed:", e.message); return go("error"); }
+  catch (e) { console.error("list not available, keeping the sign-up in KV:", e.message); await CF_KV.put("sub:confirmed:" + pending.email, JSON.stringify({ at: Date.now() })); }
   await CF_KV.delete("sub:pending:" + token);
-  try { await notifyOwner(pending.email, true); } catch (_) { /* the subscription itself worked */ }
+  // (Resend's test addresses, used to check the flow, don't email the owner)
+  if (!/@resend\.dev$/.test(pending.email)) { try { await notifyOwner(pending.email, true); } catch (_) { /* the subscription itself worked */ } }
   return go("1");
 }
 

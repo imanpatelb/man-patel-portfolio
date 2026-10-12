@@ -7,14 +7,13 @@
      RESEND_API_KEY   — your Resend API key (re_...)
    Optional environment variables:
      CONTACT_TO       — recipient (default mptraderx.capital@gmail.com)
-     CONTACT_FROM     — verified sender (default onboarding@resend.dev)
+     CONTACT_FROM     — sender (default site@manpateltrades.com, verified in Resend)
    See README.md for setup.
    ===================================================================== */
 
 const TO_DEFAULT = "mptraderx.capital@gmail.com";
-// onboarding@resend.dev works out of the box and can send to the
-// Resend account owner's own address. Use a verified domain for production.
-const FROM_DEFAULT = "Portfolio Site <onboarding@resend.dev>";
+// manpateltrades.com is verified in Resend, so mail can come from the site's own domain.
+const FROM_DEFAULT = "Man Patel website <site@manpateltrades.com>";
 
 // naive in-memory rate limit (per warm instance) — light abuse guard
 const HITS = new Map();

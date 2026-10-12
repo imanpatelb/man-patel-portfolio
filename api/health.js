@@ -18,7 +18,7 @@
 const darwin = require("./darwin.js");
 
 const TO_DEFAULT = "mptraderx.capital@gmail.com";
-const FROM_DEFAULT = "Portfolio Site <onboarding@resend.dev>";
+const FROM_DEFAULT = "Man Patel website <site@manpateltrades.com>";
 const SITE = process.env.SITE_URL || "https://manpateltrades.com";
 const MAX_QUOTE_AGE_DAYS = 4; // covers a weekend plus a market holiday
 
