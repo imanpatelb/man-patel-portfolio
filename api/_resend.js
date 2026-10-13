@@ -65,7 +65,7 @@ async function addSubscriber(email, kv) {
 
 /* ----- email bodies ----- */
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
-const INK = "#23201B", SOFT = "#5F584C", FAINT = "#6E665A", SAGE = "#3F5648", LINE = "#E2DCCF", PAPER = "#F4F1E9", CARD = "#FBF9F4";
+const GOLD = "#9C7B3F", INK = "#23201B", SOFT = "#5F584C", FAINT = "#6E665A", SAGE = "#3F5648", LINE = "#E2DCCF", PAPER = "#F4F1E9", CARD = "#FBF9F4";
 const SERIF = "Georgia,'Times New Roman',serif", SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 
 // the post's light markup (blank line = paragraph, "## " = heading, **bold**), as email HTML
@@ -82,7 +82,7 @@ function bodyText(t) { return String(t).replace(/^##\s+/gm, "").replace(/\*\*([^
 function shell(inner, foot) {
   return `<!doctype html><html><body style="margin:0;background:${PAPER}">
 <div style="max-width:600px;margin:0 auto;padding:32px 20px">
-<div style="margin-bottom:22px"><img src="${site()}/assets/img/seal-mail.png" width="32" height="32" alt="" style="border:0;vertical-align:middle;margin-right:10px"><span style="font-family:${SERIF};font-size:18px;color:${INK};vertical-align:middle">Man Patel</span></div>
+<div style="margin-bottom:22px;font-family:${SERIF};color:${INK}"><span style="font-style:italic;font-size:24px;letter-spacing:-1px">M<span style="color:${GOLD};margin-left:-4px">P</span></span><span style="display:inline-block;width:1px;height:18px;background:${LINE};margin:0 12px;vertical-align:-2px"></span><span style="font-size:18px">Man Patel</span></div>
 <div style="background:${CARD};border:1px solid ${LINE};border-radius:6px;padding:32px 30px;font-family:${SANS};font-size:16px;line-height:1.7;color:${INK}">${inner}</div>
 <div style="font-family:${SANS};font-size:12px;line-height:1.6;color:${FAINT};padding:18px 4px 0">${foot}</div>
 </div></body></html>`;

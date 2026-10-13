@@ -15,7 +15,7 @@ the public files.
 │   ├── js/factsheet.js     # the A4 factsheet
 │   ├── js/post.js          # post pages: comments, subscribe, copy link
 │   ├── fonts/              # Fraunces, Inter, IBM Plex Mono (SIL Open Font License)
-│   └── img/                # og-3.png (social share image), seal-mail.png (the seal in emails), icons
+│   └── img/                # og-4.png (social share image), icon-48/icon-180 (tab and home-screen icons)
 ├── data/portfolios.json    # config + stored fallback snapshot
 ├── data/posts.json         # blog posts (written by /admin through the GitHub API)
 ├── api/                    # functions: darwin, posts, contact, subscribe, health
