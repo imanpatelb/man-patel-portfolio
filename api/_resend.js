@@ -82,7 +82,7 @@ function bodyText(t) { return String(t).replace(/^##\s+/gm, "").replace(/\*\*([^
 function shell(inner, foot) {
   return `<!doctype html><html><body style="margin:0;background:${PAPER}">
 <div style="max-width:600px;margin:0 auto;padding:32px 20px">
-<div style="font-family:${SERIF};font-size:17px;color:${INK};margin-bottom:22px">&#9679; Man Patel</div>
+<div style="font-family:${SERIF};font-size:17px;color:${INK};margin-bottom:22px">Man Patel</div>
 <div style="background:${CARD};border:1px solid ${LINE};border-radius:6px;padding:32px 30px;font-family:${SANS};font-size:16px;line-height:1.7;color:${INK}">${inner}</div>
 <div style="font-family:${SANS};font-size:12px;line-height:1.6;color:${FAINT};padding:18px 4px 0">${foot}</div>
 </div></body></html>`;

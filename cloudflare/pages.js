@@ -7,7 +7,7 @@
    ===================================================================== */
 
 const SITE_NAME = "Man Patel";
-const STYLES = "/assets/css/styles.css?v=24";
+const STYLES = "/assets/css/styles.css?v=25";
 const POST_JS = "/assets/js/post.js?v=1";
 const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DISCLAIMER = "Capital at risk. Past performance is not indicative of future results. This is a personal note about my own trading, not investment advice or an offer to invest.";
@@ -39,7 +39,9 @@ function longDate(iso) { const [y, m, d] = String(iso).split("-").map(Number); r
 function rfc822(p) { return new Date(p.createdAt || p.date + "T12:00:00Z").toUTCString(); }
 
 const THEME_EARLY = '<script>(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>';
-const ICON = `<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23F4F1E9'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%233F5648'/%3E%3C/svg%3E">`;
+const ICON = `<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/img/favicon-48.png" type="image/png" sizes="48x48">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">`;
 const FONTS = '<link rel="preload" href="/assets/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>\n<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>';
 const THEME_BTN = `<button class="theme-btn" id="themeBtn" type="button" aria-label="Switch to dark theme"><svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg></button>`;
 
@@ -69,7 +71,7 @@ ${body}
 }
 
 function topbar() {
-  return `<header id="hdr"><div class="legal-top post-top"><a class="brand" href="/"><span class="dot"></span>${SITE_NAME}</a><div class="post-top-r"><a href="/#notes">&larr; All notes</a>${THEME_BTN}</div></div></header>`;
+  return `<header id="hdr"><div class="legal-top post-top"><a class="brand" href="/">${SITE_NAME}</a><div class="post-top-r"><a href="/#notes">&larr; All notes</a>${THEME_BTN}</div></div></header>`;
 }
 function footer(cfdPct) {
   return `<footer><div class="wrap post-foot">
@@ -94,7 +96,7 @@ const SUBSCRIBE = `<div class="subscribe post-sub">
 
 export function postPage(post, all, { origin, comments, cfdPct, x }) {
   const slug = slugOf(post), url = origin + "/notes/" + slug, desc = excerpt(post.body) || DISCLAIMER;
-  const img = origin + "/assets/img/og.png", handle = (String(x || "").match(/x\.com\/([A-Za-z0-9_]+)/) || [])[1];
+  const img = origin + "/assets/img/og-2.png", handle = (String(x || "").match(/x\.com\/([A-Za-z0-9_]+)/) || [])[1];
   const ld = { "@context": "https://schema.org", "@type": "BlogPosting", headline: post.title, description: desc, datePublished: post.createdAt || post.date, mainEntityOfPage: url, url, image: img, author: { "@type": "Person", name: SITE_NAME, url: origin + "/" }, publisher: { "@type": "Person", name: SITE_NAME } };
   const head = `<meta property="og:type" content="article">
 <meta property="og:site_name" content="${SITE_NAME}">

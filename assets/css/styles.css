@@ -95,7 +95,6 @@ header{position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-fil
 header.scrolled{border-bottom-color:var(--line)}
 .nav{display:flex;align-items:center;justify-content:space-between;height:66px}
 .brand{font-family:var(--serif);font-size:19px;letter-spacing:-0.01em;display:flex;align-items:baseline;gap:9px}
-.brand .dot{width:6px;height:6px;border-radius:50%;background:var(--sage);display:inline-block;transform:translateY(-2px)}
 .nav-right{display:flex;align-items:center;gap:26px}
 .navlinks{display:flex;gap:30px}
 .navlinks a{font-size:13.5px;color:var(--ink-soft);position:relative;padding:4px 0;transition:color .2s}
