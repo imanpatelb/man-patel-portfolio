@@ -7,7 +7,9 @@
    ===================================================================== */
 
 const SITE_NAME = "Man Patel";
-const STYLES = "/assets/css/styles.css?v=25";
+// the header seal (same markup as index.html; the lace ring is stored once and turned three times)
+const SEAL = '<svg class="seal" viewBox="0 0 40 40" aria-hidden="true"><defs><path id="mpLace" pathLength="1" d="M35 20l.99 .52 .71 .57 .22 .58-.33 .51-.8 .43-1.08 .32-1.08 .25-.81 .25-.38 .34 .12 .49 .54 .67 .76 .81 .71 .86 .44 .8-.02 .61-.5 .36-.9 .08-1.12-.12-1.09-.18-.85-.07-.48 .17-.07 .5 .24 .82 .39 1.04 .33 1.07 .09 .9-.25 .56-.59 .13-.87-.26-.99-.54-.94-.58-.76-.4-.5-.03-.26 .44-.09 .85-.04 1.11-.1 1.11-.26 .87-.45 .43-.6-.11-.7-.58-.7-.87-.65-.9-.55-.66-.46-.21-.4 .3-.41 .75-.46 1.01-.52 .99-.57 .71-.58 .22-.51-.33-.43-.8-.32-1.08-.25-1.08-.25-.81-.34-.38-.49 .12-.67 .54-.81 .76-.86 .71-.8 .44-.61-.02-.36-.5-.08-.9 .12-1.12 .18-1.09 .07-.85-.17-.48-.5-.07-.82 .24-1.04 .39-1.07 .33-.9 .09-.56-.25-.13-.59 .26-.87 .54-.99 .58-.94 .4-.76 .03-.5-.44-.26-.85-.09-1.11-.04-1.11-.1-.87-.26-.43-.45 .11-.6 .58-.7 .87-.7 .9-.65 .66-.55 .21-.46-.3-.4-.75-.41-1.01-.46-.99-.52-.71-.57-.22-.58 .33-.51 .8-.43 1.08-.32 1.08-.25 .81-.25 .38-.34-.12-.49-.54-.67-.76-.81-.71-.86-.44-.8 .02-.61 .5-.36 .9-.08 1.12 .12 1.09 .18 .85 .07 .48-.17 .07-.5-.24-.82-.39-1.04-.33-1.07-.09-.9 .25-.56 .59-.13 .87 .26 .99 .54 .94 .58 .76 .4 .5 .03 .26-.44 .09-.85 .04-1.11 .1-1.11 .26-.87 .45-.43 .6 .11 .7 .58 .7 .87 .65 .9 .55 .66 .46 .21 .4-.3 .41-.75 .46-1.01 .52-.99 .57-.71 .58-.22 .51 .33 .43 .8 .32 1.08 .25 1.08 .25 .81 .34 .38 .49-.12 .67-.54 .81-.76 .86-.71 .8-.44 .61 .02 .36 .5 .08 .9-.12 1.12-.18 1.09-.07 .85 .17 .48 .5 .07 .82-.24 1.04-.39 1.07-.33 .9-.09 .56 .25 .13 .59-.26 .87-.54 .99-.58 .94-.4 .76-.03 .5 .44 .26 .85 .09 1.11 .04 1.11 .1 .87 .26 .43 .45-.11 .6-.58 .7-.87 .7-.9 .65-.66 .55-.21 .46 .3 .4 .75 .41z"/></defs><circle class="rim" cx="20" cy="20" r="19.4"/><circle class="rim2" cx="20" cy="20" r="18.5"/><g class="lace"><g class="lace-i"><use href="#mpLace"/><use href="#mpLace" transform="rotate(5.625 20 20)"/><use href="#mpLace" transform="rotate(11.25 20 20)"/><use href="#mpLace" transform="rotate(16.875 20 20)"/></g></g><circle class="rim" cx="20" cy="20" r="11.4"/><text x="20" y="24.3" text-anchor="middle">MP</text></svg>';
+const STYLES = "/assets/css/styles.css?v=26";
 const POST_JS = "/assets/js/post.js?v=1";
 const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DISCLAIMER = "Capital at risk. Past performance is not indicative of future results. This is a personal note about my own trading, not investment advice or an offer to invest.";
@@ -71,7 +73,7 @@ ${body}
 }
 
 function topbar() {
-  return `<header id="hdr"><div class="legal-top post-top"><a class="brand" href="/">${SITE_NAME}</a><div class="post-top-r"><a href="/#notes">&larr; All notes</a>${THEME_BTN}</div></div></header>`;
+  return `<header id="hdr"><div class="legal-top post-top"><a class="brand" href="/">${SEAL}<span class="wm"><span>${SITE_NAME}</span></span></a><div class="post-top-r"><a href="/#notes">&larr; All notes</a>${THEME_BTN}</div></div></header>`;
 }
 function footer(cfdPct) {
   return `<footer><div class="wrap post-foot">
@@ -96,7 +98,7 @@ const SUBSCRIBE = `<div class="subscribe post-sub">
 
 export function postPage(post, all, { origin, comments, cfdPct, x }) {
   const slug = slugOf(post), url = origin + "/notes/" + slug, desc = excerpt(post.body) || DISCLAIMER;
-  const img = origin + "/assets/img/og-2.png", handle = (String(x || "").match(/x\.com\/([A-Za-z0-9_]+)/) || [])[1];
+  const img = origin + "/assets/img/og-3.png", handle = (String(x || "").match(/x\.com\/([A-Za-z0-9_]+)/) || [])[1];
   const ld = { "@context": "https://schema.org", "@type": "BlogPosting", headline: post.title, description: desc, datePublished: post.createdAt || post.date, mainEntityOfPage: url, url, image: img, author: { "@type": "Person", name: SITE_NAME, url: origin + "/" }, publisher: { "@type": "Person", name: SITE_NAME } };
   const head = `<meta property="og:type" content="article">
 <meta property="og:site_name" content="${SITE_NAME}">

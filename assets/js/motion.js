@@ -153,11 +153,12 @@
     scrub.classList.add("scrub");
   }
 
-  /* ---------- scroll-linked: lede progress + hero field parallax ---------- */
-  var bg = document.getElementById("heroBg"), ticking = false;
+  /* ---------- scroll-linked: lede progress, hero field parallax, the seal's lace turning ---------- */
+  var bg = document.getElementById("heroBg"), lace = document.querySelector("#hdr .lace"), ticking = false;
   function onScroll() {
     ticking = false;
     var vh = window.innerHeight;
+    if (lace && !REDUCE) lace.style.transform = "rotate(" + ((window.scrollY || window.pageYOffset) * 0.06).toFixed(2) + "deg)";
     if (scrub && !REDUCE) {
       var r = scrub.getBoundingClientRect(), p = (vh * 0.88 - r.top) / (vh * 0.5);
       scrub.style.setProperty("--p", Math.max(0, Math.min(1, p)).toFixed(3));
