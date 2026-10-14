@@ -592,13 +592,14 @@
       e.preventDefault(); scrubAt(kIdx); say(kIdx);
     });
 
-    /* ----- first view: the line draws itself in, led by a glowing point ----- */
+    /* ----- first view: the line draws itself in, led by a glowing point — quickly, so the record is there
+       almost as soon as the chart is (it starts as the chart enters and fronts most of the motion) ----- */
     function revealChart() {
       if (revealed || !cur.g) return;
       revealed = true;
       if (REDUCE || !window.MP) { revealR.setAttribute("width", W0 + 20); svg.classList.add("done"); return; }
       revealing = true; vis(head, 1); vis(halo, 1);
-      MP.tween(1700, MP.ease.inOut, function (k) {
+      MP.tween(650, MP.ease.out, function (k) {
         var x = padL + k * (W0 - padL - padR), y = yAtX(shown || cur.g, x);
         revealR.setAttribute("width", x);
         attr(head, { cx: x, cy: y }); attr(halo, { cx: x, cy: y });
@@ -606,7 +607,7 @@
     }
     if (REDUCE) svg.classList.add("done");
     else if ("IntersectionObserver" in window) {
-      var cio = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { cio.disconnect(); setTimeout(revealChart, 260); } }, { threshold: 0.35 });
+      var cio = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { cio.disconnect(); revealChart(); } }, { threshold: 0.12 });
       cio.observe(chartboxEl);
     } else { revealed = true; svg.classList.add("done"); }
 
@@ -723,7 +724,7 @@
       });
     }
 
-    /* ===================== hero live card (stat tile) ===================== */
+    /* ===================== hero band: the live quote, its move, the sparkline ===================== */
     var HK = PORTFOLIOS.filter(function (p) { return !p.comingSoon; }).map(function (p) { return p.key; })[0];
     var heroCard = $("heroCard"), hcSpark = $("hcSpark"), hc = { revealed: REDUCE, revealing: false };
     function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
@@ -770,12 +771,12 @@
         hc.revealed = true; hc.revealing = true; vis($("hcDot"), 0);
         setTimeout(function () {
           vis($("hcDot"), 1);
-          tween(1600, function (k) {
+          tween(700, function (k) {
             var x = pad + k * (hc.w - pad * 2);
             $("hcClipR").setAttribute("width", x);
             attr($("hcDot"), { cx: x, cy: hcYAt(k * (hc.d.eq.length - 1)) });
           }, function () { hc.revealing = false; $("hcClipR").setAttribute("width", hc.w + 20); hcDotAt(hc.d.eq.length - 1); });
-        }, 650);
+        }, 250);
       }
     }
     function hcDotAt(i) { attr($("hcDot"), { cx: hc.X(i), cy: hc.Y(hc.d.eq[i]) }); }
@@ -830,7 +831,6 @@
         // non-breaking spaces keep each name whole when the list wraps ("DAX 40", not "DAX / 40")
         if (rest.length) html += mixRow("Other", rest.map(function (x) { return iname(x.name).replace(/ /g, " "); }).join(", "), rest.reduce(function (s, x) { return s + x.pct; }, 0), max, true, top.length);
         $("mixList").innerHTML = html; $("mixCard").hidden = false; any = true;
-        if (window.MP && MP.markets) MP.markets(mix); // the hero globe's cities follow what KBAD trades
         [].forEach.call($("mixList").querySelectorAll(".mix-val"), function (v) { num(v, v.textContent); });
       }
       wrap.hidden = !any;
@@ -838,7 +838,7 @@
       if (dd.uw && !dd.watch) {
         dd.watch = true;
         if ("IntersectionObserver" in window && !REDUCE) {
-          var io = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { io.disconnect(); setTimeout(revealDD, 200); } }, { threshold: 0.5 });
+          var io = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { io.disconnect(); revealDD(); } }, { threshold: 0.2 });
           io.observe(ddSvg);
         } else revealDD();
       }
@@ -891,7 +891,7 @@
       var r = $("ddClipR");
       if (REDUCE || !window.MP) { r.setAttribute("width", dd.w + 20); ddSvg.classList.add("done"); return; }
       dd.revealing = true;
-      MP.tween(1400, MP.ease.inOut, function (k) { r.setAttribute("width", k * (dd.w + 20)); },
+      MP.tween(600, MP.ease.out, function (k) { r.setAttribute("width", k * (dd.w + 20)); },
         function () { dd.revealing = false; r.setAttribute("width", dd.w + 20); ddSvg.classList.add("done"); });
     }
     function ddReadAt(i) { $("ddRead").textContent = fdate(dd.dates[i]) + " · " + pctp(dd.uw[i]); }
@@ -978,7 +978,6 @@
       if (!cap) return; // the sentence leads with Darwinex's DarwinIA allocation
       $("enCap").textContent = money(cap);
       if (rank) $("enRank").textContent = "#" + rank; else $("enRankWrap").hidden = true;
-      if (d.url) $("enLink").href = d.url;
       band.hidden = false;
     }
 
@@ -1024,18 +1023,20 @@
     (function hero() {
       var keys = PORTFOLIOS.map(function (p) { return p.key; });
       var real = keys.filter(function (k) { return DATA[k].real; });
-      var capEl = $("hCapital"), retEl = $("hReturn"), shEl = $("hSharpe");
-      var aum, ret, sh;
+      var capEl = $("hCapital"), retEl = $("hReturn"), shEl = $("hSharpe"), ddEl = $("hMDD");
+      var aum, ret, sh, mdd;
       if (real.length) {
         var w = 0; aum = 0; ret = 0; sh = 0;
         real.forEach(function (k) { var a = DATA[k].aum || 1, m = DATA[k].metrics; w += a; aum += (DATA[k].aum || 0); ret += a * m.return; sh += a * m.sharpe; });
         ret /= w; sh /= w;
+        mdd = Math.min.apply(null, real.map(function (k) { return DATA[k].metrics.maxDrawdown; })); // the deepest book's (already floored to Darwinex's intraday figure)
       } else {
         var cs = computeStats(DATA.COMBINED.eq, DATA.COMBINED.dates);
-        aum = 0; ret = cs.tot; sh = cs.sh;
+        aum = 0; ret = cs.tot; sh = cs.sh; mdd = cs.mdd;
       }
       retEl.classList.add(ret >= 0 ? "pos" : "neg"); num(retEl, pct(ret));
       num(shEl, sh.toFixed(2));
+      if (ddEl && typeof mdd === "number") num(ddEl, pctp(mdd));
       if (aum > 0) num(capEl, money(aum)); else capEl.textContent = "—";
     })();
 
