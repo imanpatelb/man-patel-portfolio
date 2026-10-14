@@ -11,7 +11,7 @@ the public files.
 ├── assets/
 │   ├── css/styles.css      # all styling (fonts are self-hosted, see assets/fonts)
 │   ├── js/main.js          # data, charts, forms
-│   ├── js/motion.js        # rolling numbers, reveals, hero line field, pointer effects
+│   ├── js/motion.js        # rolling numbers, reveals, hero globe, pointer effects
 │   ├── js/factsheet.js     # the A4 factsheet
 │   ├── js/post.js          # post pages: comments, subscribe, copy link
 │   ├── fonts/              # Fraunces, Inter, IBM Plex Mono (SIL Open Font License)

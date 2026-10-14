@@ -562,7 +562,7 @@ footer{border-top:1px solid var(--line);padding:54px 0 60px}
 .odo-s>span{display:block;height:1.4em;line-height:1.4em;text-align:center}
 @media (forced-colors:active){.odo-g{color:inherit}.odo-o{display:none}}
 
-/* hero background: guilloché line field, faded into the paper */
+/* hero background: the "follow the sun" globe (motion.js), faded into the paper */
 .hero-bg{position:absolute;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;overflow:hidden;pointer-events:none;z-index:0;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 14%,#000 55%,transparent 96%);mask-image:linear-gradient(180deg,transparent 0,#000 14%,#000 55%,transparent 96%)}
 .hero-bg canvas{position:absolute;inset:0;width:100%;height:100%;display:block;will-change:transform}
 .hero>*:not(.hero-bg){position:relative;z-index:1}

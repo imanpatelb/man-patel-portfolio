@@ -830,6 +830,7 @@
         // non-breaking spaces keep each name whole when the list wraps ("DAX 40", not "DAX / 40")
         if (rest.length) html += mixRow("Other", rest.map(function (x) { return iname(x.name).replace(/ /g, " "); }).join(", "), rest.reduce(function (s, x) { return s + x.pct; }, 0), max, true, top.length);
         $("mixList").innerHTML = html; $("mixCard").hidden = false; any = true;
+        if (window.MP && MP.markets) MP.markets(mix); // the hero globe's cities follow what KBAD trades
         [].forEach.call($("mixList").querySelectorAll(".mix-val"), function (v) { num(v, v.textContent); });
       }
       wrap.hidden = !any;
