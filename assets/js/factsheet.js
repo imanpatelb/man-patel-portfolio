@@ -93,7 +93,7 @@
     // capital and activity
     var a = d.aum || {}, act = d.activity || {}, rows = [];
     if (a.totalEur) rows.push(["Assets under management", eur(a.totalEur)]);
-    if (a.darwinexCapitalEur) rows.push(["Darwinex’s own capital", eur(a.darwinexCapitalEur)]);
+    if (a.darwinexCapitalEur) rows.push(["DarwinIA allocation", eur(a.darwinexCapitalEur)]);
     if (a.investorsUsd) rows.push(["Investors", usd(a.investorsUsd) + (a.investors >= 10 ? " · " + a.investors : "")]); // count shown from 10, as on the site
     if (act.trades != null) rows.push(["Trades", act.trades.toLocaleString("en-US") + (act.avgDuration ? " · avg " + fmtDur(act.avgDuration) : "")]);
     if (act.winningTrades != null) rows.push(["Winning trades", (act.winningTrades * 100).toFixed(1) + "%"]);
@@ -116,8 +116,8 @@
 
     var rec = d.recognition;
     if (a.darwinexCapitalEur) {
-      $("fsEndorse").innerHTML = "Darwinex has invested <strong>" + eur(a.darwinexCapitalEur) + "</strong> of its own capital in " + esc(d.ticker) +
-        (rec && rec.bestRank ? ", and ranked it as high as <strong>#" + rec.bestRank + "</strong> in its capital-allocation programme." : ".");
+      $("fsEndorse").innerHTML = "Darwinex has allocated <strong>" + eur(a.darwinexCapitalEur) + "</strong> to " + esc(d.ticker) + " through DarwinIA, its capital-allocation programme" +
+        (rec && rec.bestRank ? ", where " + esc(d.ticker) + " has ranked as high as <strong>#" + rec.bestRank + "</strong>." : ".");
       $("fsEndorse").hidden = false;
     }
 

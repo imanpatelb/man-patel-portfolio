@@ -1,5 +1,5 @@
 {
-  "_README": "Books with `live:true` load their quotes and stats from /api/darwin (Darwinex's public DARWIN page) on every visit. `maxDrawdownFloor` is Darwinex's intraday max drawdown — the site shows the deeper of it and the daily-close figure, so raise it if Darwinex reports a deeper one. AUM is live too (Darwinex capital + investors, USD converted at the ECB rate); `aum` here is only the fallback. The `metrics`/`monthly`/`days` below are a stored snapshot (12 Jun 2026), used only if live data can't be fetched. Set `comingSoon:true` for a not-yet-public book. `darwinexUrl` is the public proof link.",
+  "_README": "Books with `live:true` load their quotes and stats from /api/darwin (Darwinex's public DARWIN page) on every visit. `maxDrawdownFloor` is Darwinex's intraday max drawdown — the site shows the deeper of it and the daily-close figure, so raise it if Darwinex reports a deeper one. AUM is live too (Darwinex capital + investors, USD converted at the ECB rate); `aum` here is only the fallback. The `metrics`/`monthly`/`days` below are a stored snapshot (12 Jun 2026), used only if live data can't be fetched. Set `comingSoon:true` for a not-yet-public book. `darwinexUrl` is the public proof link; `zeroUrl` (optional) is the DARWIN's public Darwinex Zero page, linked beside it.",
   "config": {
     "name": "Man Patel",
     "tagline": "Discretionary Trader",
@@ -17,6 +17,7 @@
       "key": "KBAD",
       "strat": "Discretionary · multi-asset",
       "darwinexUrl": "https://www.darwinex.com/invest/KBAD",
+      "zeroUrl": "https://www.darwinexzero.com/darwin/KBAD/performance",
       "live": true,
       "maxDrawdownFloor": -0.0818,
       "inception": "2026-01-09",

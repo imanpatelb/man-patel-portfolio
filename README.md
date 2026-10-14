@@ -78,7 +78,9 @@ free plan's CPU limit. If Darwinex is unreachable, the last good copy is served
 `data/portfolios.json` is shown, labelled "as of" its date.
 
 AUM is Darwinex's invested capital (EUR) plus investors' capital (USD, converted at
-the ECB euro reference rate). The one manual number is `maxDrawdownFloor` in
+the ECB euro reference rate). Darwinex Zero shows a higher AUM because it also counts
+a €100k permanent allocation, which is purchased notional capital. The site leaves it out
+on purpose, and explains why in the FAQ. The one manual number is `maxDrawdownFloor` in
 `data/portfolios.json`: Darwinex measures drawdown intraday, which is deeper than
 daily closes, and the site shows the deeper of the two.
 

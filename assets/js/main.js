@@ -33,7 +33,7 @@
   var FALLBACK = {
     config: { contactEmail: "mptraderx.capital@gmail.com", currency: "EUR", inceptionDate: "2026-01-09", x: "https://x.com/mptraderx", linkedin: "" },
     portfolios: [
-      { key: "KBAD", strat: "Discretionary · multi-asset", darwinexUrl: "https://www.darwinex.com/invest/KBAD", inception: "2026-01-09", live: true, maxDrawdownFloor: -0.0818, gen: { seed: 7, drift: 0.00092, vol: 0.0072 } }
+      { key: "KBAD", strat: "Discretionary · multi-asset", darwinexUrl: "https://www.darwinex.com/invest/KBAD", zeroUrl: "https://www.darwinexzero.com/darwin/KBAD/performance", inception: "2026-01-09", live: true, maxDrawdownFloor: -0.0818, gen: { seed: 7, drift: 0.00092, vol: 0.0072 } }
     ],
     notes: []
   };
@@ -156,7 +156,7 @@
         var real = !!(p.metrics && (hasSeries || p.monthly));
         var c = hasSeries ? fromSeries(p.series) : (real ? reconstruct(p) : synth(p));
         DATA[p.key] = {
-          dates: c.dates, eq: c.eq, peak: runPeak(c.eq), strat: p.strat, url: p.darwinexUrl,
+          dates: c.dates, eq: c.eq, peak: runPeak(c.eq), strat: p.strat, url: p.darwinexUrl, zeroUrl: p.zeroUrl || "",
           real: real, live: !!p.liveSynced, asOf: p.asOf || null, asOfTime: p.asOfTime || null, metrics: p.metrics || null,
           aum: (typeof p.aum === "number" ? p.aum : null), aumParts: p.aumParts || null,
           inception: p.inception || null,
@@ -428,7 +428,7 @@
         else if (full.aum) mh += metaItem(full.combined ? "AUM · all books" : "AUM", money(full.aum));
         var ap = full.aumParts;
         if (ap) {
-          if (ap.darwinexCapitalEur) mh += metaItem("Darwinex capital", money(ap.darwinexCapitalEur));
+          if (ap.darwinexCapitalEur) mh += metaItem("DarwinIA allocation", money(ap.darwinexCapitalEur));
           // the head count only shows once it's a strength (INVESTOR_COUNT_FROM); the capital always does
           if (ap.investorsUsd) mh += metaItem("Investors", "$" + Math.round(ap.investorsUsd).toLocaleString("en-US") + (ap.investors >= INVESTOR_COUNT_FROM ? " · " + ap.investors : ""));
         }
@@ -441,6 +441,7 @@
       var strat = $("trStrat"); strat.innerHTML = "";
       strat.appendChild(document.createTextNode(full.strat + "  "));
       if (full.url) { var a = el("a"); a.href = full.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "View on Darwinex ↗"; strat.appendChild(a); }
+      if (full.zeroUrl && !full.combined) { strat.appendChild(document.createTextNode("  ·  ")); var z = el("a"); z.href = full.zeroUrl; z.target = "_blank"; z.rel = "noopener"; z.textContent = "Darwinex Zero ↗"; strat.appendChild(z); }
       if (full.real && !full.combined) { strat.appendChild(document.createTextNode("  ·  ")); var sheet = el("a"); sheet.href = "/factsheet"; sheet.target = "_blank"; sheet.rel = "noopener"; sheet.textContent = "Factsheet (PDF) ↗"; strat.appendChild(sheet); }
 
       // stat grid: canonical full-period stats (exact for real books)
@@ -973,7 +974,7 @@
       var d = HK && DATA[HK], band = $("endorse");
       if (!band || !d || !d.live) return;
       var cap = d.aumParts && d.aumParts.darwinexCapitalEur, rank = d.recognition && d.recognition.bestRank;
-      if (!cap) return; // the sentence leads with Darwinex's own capital
+      if (!cap) return; // the sentence leads with Darwinex's DarwinIA allocation
       $("enCap").textContent = money(cap);
       if (rank) $("enRank").textContent = "#" + rank; else $("enRankWrap").hidden = true;
       if (d.url) $("enLink").href = d.url;
