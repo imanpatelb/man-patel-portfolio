@@ -177,7 +177,7 @@
     if (!ctx) return;
     var hero = cv.closest(".hero") || cv.parentNode;
     var W = 0, Hh = 0, dpr = 1, D = 0, cx = 0, cy = 0, img = null, key = "";
-    var gold = [156, 123, 63], dk = false, ang = 0, last = 0, lastDraw = 0, on = false, inView = true;
+    var gold = [156, 123, 63], ang = 0, last = 0, lastDraw = 0, on = false, inView = true;
     var TURN = Math.PI * 2 / 360000; // radians per millisecond: one turn in six minutes
     function hex(s) {
       s = String(s).trim().replace("#", "");
@@ -185,8 +185,7 @@
       var n = parseInt(s, 16);
       return isNaN(n) ? null : [n >> 16 & 255, n >> 8 & 255, n & 255];
     }
-    function dark() { var a = document.documentElement.getAttribute("data-theme"); return a ? a === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
-    function colors() { gold = hex(getComputedStyle(document.documentElement).getPropertyValue("--gold")) || gold; dk = dark(); key = ""; draw(); }
+    function colors() { gold = hex(getComputedStyle(document.documentElement).getPropertyValue("--gold")) || gold; key = ""; draw(); }
     // the engraving, in a 40-unit box: rims and three lace bands of interlaced lobed rings
     function engrave(px) {
       var c = document.createElement("canvas"); c.width = c.height = px;
@@ -219,10 +218,10 @@
     function draw() {
       if (!W || !D) return;
       // re-engrave only when the size moves to a new step (or the theme changes), never on every resize event
-      var px = Math.min(W < 640 ? 1600 : 2048, Math.ceil(D * dpr / 256) * 256), k = px + (dk ? "d" : "l");
+      var px = Math.min(W < 640 ? 1600 : 2048, Math.ceil(D * dpr / 256) * 256), k = String(px);
       if (!img || key !== k) { img = engrave(px); key = k; }
       ctx.clearRect(0, 0, W, Hh);
-      ctx.save(); ctx.globalAlpha = dk ? 0.32 : 0.38; ctx.translate(cx, cy); ctx.rotate(ang);
+      ctx.save(); ctx.globalAlpha = 0.38; ctx.translate(cx, cy); ctx.rotate(ang);
       ctx.drawImage(img, -D / 2, -D / 2, D, D); ctx.restore();
     }
     function frame(now) {
@@ -238,8 +237,6 @@
     }
     colors(); size();
     if (window.ResizeObserver) new ResizeObserver(size).observe(hero); else window.addEventListener("resize", size);
-    new MutationObserver(colors).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    var mq = matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", colors);
     if (REDUCE) return;
     if ("IntersectionObserver" in window) new IntersectionObserver(function (es) { inView = es[0].isIntersecting; run(); }).observe(hero);
     document.addEventListener("visibilitychange", run);

@@ -36,40 +36,6 @@
   --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"IBM Plex Mono",monospace;
   --ease:cubic-bezier(.22,.61,.36,1);
 }
-/* dark: OS setting, unless the visitor picked light */
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    color-scheme:dark;
-    --paper:#161411; --paper2:#1C1916; --surface:#221F1A;
-    --ink:#EEE8DC; --ink-soft:#BDB5A6; --ink-faint:#9C9486;
-    --line:rgba(238,232,220,0.11); --line-strong:rgba(238,232,220,0.22);
-    --sage:#93B8A0; --gold:#C9A466; --gold-text:#C9A466;
-    --pos:#93B8A0; --neg:#E0937D;
-    --sage-tint:rgba(147,184,160,0.12); --sage-line:rgba(147,184,160,0.40);
-    --neg-tint:rgba(224,147,125,0.12); --gold-tint:rgba(201,164,102,0.08);
-    --header-bg:rgba(22,20,17,0.82); --card-inset:rgba(255,255,255,0.03);
-    --shadow:0,0,0; --grain:.22;
-    --chart-fill:rgba(147,184,160,0.10); --spark:#8F887B;
-    --gain-rgb:47,156,138; --loss-rgb:212,108,58;   /* #2F9C8A / #D46C3A */
-    --glow-rgb:147,184,160; --glare:rgba(255,255,255,.10);
-  }
-}
-/* dark: chosen with the toggle (wins over the OS setting) */
-:root[data-theme="dark"]{
-  color-scheme:dark;
-  --paper:#161411; --paper2:#1C1916; --surface:#221F1A;
-  --ink:#EEE8DC; --ink-soft:#BDB5A6; --ink-faint:#9C9486;
-  --line:rgba(238,232,220,0.11); --line-strong:rgba(238,232,220,0.22);
-  --sage:#93B8A0; --gold:#C9A466; --gold-text:#C9A466;
-  --pos:#93B8A0; --neg:#E0937D;
-  --sage-tint:rgba(147,184,160,0.12); --sage-line:rgba(147,184,160,0.40);
-  --neg-tint:rgba(224,147,125,0.12); --gold-tint:rgba(201,164,102,0.08);
-  --header-bg:rgba(22,20,17,0.82); --card-inset:rgba(255,255,255,0.03);
-  --shadow:0,0,0; --grain:.22;
-  --chart-fill:rgba(147,184,160,0.10); --spark:#8F887B;
-  --gain-rgb:47,156,138; --loss-rgb:212,108,58;
-  --glow-rgb:147,184,160; --glare:rgba(255,255,255,.10);
-}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -126,21 +92,9 @@ header.scrolled{border-bottom-color:var(--line)}
 .navlinks a:hover,.navlinks a.active{color:var(--ink)}
 .navlinks{position:relative}
 .nav-ind{position:absolute;left:0;bottom:-2px;height:1px;width:0;background:var(--gold);opacity:0;pointer-events:none;transition:transform .55s cubic-bezier(.16,1,.3,1),width .55s cubic-bezier(.16,1,.3,1),opacity .3s}
-.nav-actions{display:flex;align-items:center;gap:6px}
+.nav-actions{display:none;align-items:center;gap:6px}
 .menubtn{display:none;background:none;border:0;cursor:pointer;color:var(--ink);font-size:22px;padding:6px}
 
-/* theme toggle: moon in light (go dark), sun in dark (go light) */
-.theme-btn{width:34px;height:34px;display:inline-grid;place-items:center;border:1px solid var(--line-strong);border-radius:50%;background:transparent;color:var(--ink-soft);cursor:pointer;transition:color .2s,border-color .2s,transform .4s var(--ease)}
-.theme-btn:hover{color:var(--ink);border-color:var(--ink)}
-.theme-btn:active{transform:rotate(-20deg) scale(.94)}
-.theme-btn svg{width:16px;height:16px;display:block}
-.theme-btn .i-sun{display:none}
-:root[data-theme="dark"] .theme-btn .i-sun{display:block}
-:root[data-theme="dark"] .theme-btn .i-moon{display:none}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .theme-btn .i-sun{display:block}
-  :root:not([data-theme="light"]) .theme-btn .i-moon{display:none}
-}
 
 section{padding:90px 0}
 .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:34px}
@@ -630,9 +584,6 @@ footer{border-top:1px solid var(--line);padding:54px 0 60px}
 .risk-grid.in .risk:nth-child(2) .ic::after{transition-delay:.12s}
 .risk-grid.in .risk:nth-child(3) .ic::after{transition-delay:.24s}
 
-/* theme switch: the new theme spreads from the button (View Transitions) */
-::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
-.vt *,.vt *::before,.vt *::after,.vt body{transition:none!important}
 
 /* two-column approach: the lede stays in view beside the longer right column */
 @media(min-width:861px){
@@ -676,6 +627,7 @@ footer{border-top:1px solid var(--line);padding:54px 0 60px}
   .navlinks a{padding:13px 0;border-bottom:1px solid var(--line);font-size:15px}
   .navlinks a::after{display:none}
   .menubtn{display:block}
+  .nav-actions{display:flex}
   section{padding:58px 0}
   .sec-head{margin-bottom:26px}
   .sec-head h2{font-size:25px}

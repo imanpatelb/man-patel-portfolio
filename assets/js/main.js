@@ -227,7 +227,6 @@
       if (at && !isNaN(at)) return fdate(at) + ", " + at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
       return d.asOf ? fdate(parseISO(d.asOf)) : "";
     }
-    function themeNow() { return document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); }
 
     /* ===================== equity chart =====================
        Drawn at its real pixel size (viewBox = rendered box), so markers stay
@@ -980,44 +979,6 @@
       if (rank) $("enRank").textContent = "#" + rank; else $("enRankWrap").hidden = true;
       band.hidden = false;
     }
-
-    /* ===================== theme toggle =====================
-       Where supported, the new theme spreads out from the button in a circle. */
-    (function themeToggle() {
-      var btn = $("themeBtn"), root = document.documentElement;
-      if (!btn) return;
-      var mq = matchMedia("(prefers-color-scheme: dark)");
-      function sync() {
-        var t = themeNow();
-        btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
-        if (root.hasAttribute("data-theme")) { // an explicit choice overrides the OS-based browser-bar colour
-          var bar = getComputedStyle(root).getPropertyValue("--paper").trim();
-          [].forEach.call(document.querySelectorAll('meta[name="theme-color"]'), function (m) { m.setAttribute("content", bar); });
-        }
-        var fr = document.querySelector("iframe.giscus-frame");
-        if (fr) fr.contentWindow.postMessage({ giscus: { setConfig: { theme: t } } }, "https://giscus.app");
-      }
-      btn.addEventListener("click", function () {
-        var next = themeNow() === "dark" ? "light" : "dark";
-        function apply() {
-          root.setAttribute("data-theme", next);
-          try { localStorage.setItem("theme", next); } catch (e) { /* private mode: choice lasts this page view */ }
-          sync();
-        }
-        if (!document.startViewTransition || REDUCE) { apply(); return; }
-        var r = btn.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
-        var R = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
-        root.classList.add("vt");
-        var vt = document.startViewTransition(apply);
-        vt.ready.then(function () {
-          root.animate({ clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + R + "px at " + x + "px " + y + "px)"] },
-            { duration: 700, easing: "cubic-bezier(.65,0,.35,1)", pseudoElement: "::view-transition-new(root)" });
-        }).catch(function () { /* fine */ });
-        vt.finished.then(function () { root.classList.remove("vt"); }, function () { root.classList.remove("vt"); });
-      });
-      if (mq.addEventListener) mq.addEventListener("change", sync);
-      sync();
-    })();
 
     /* ===================== hero stats (aggregate of REAL books) ===================== */
     (function hero() {

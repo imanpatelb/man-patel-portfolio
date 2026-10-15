@@ -1,29 +1,11 @@
 /* =====================================================================
-   Post pages (/notes/<slug>, built by cloudflare/pages.js): theme toggle,
-   Giscus comments, the subscribe form and "Copy link". Small on purpose:
+   Post pages (/notes/<slug>, built by cloudflare/pages.js): Giscus
+   comments, the subscribe form and "Copy link". Small on purpose:
    no charts here.
    ===================================================================== */
 (function () {
   "use strict";
   function $(id) { return document.getElementById(id); }
-  var root = document.documentElement;
-  function themeNow() { return root.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); }
-
-  /* ----- theme ----- */
-  var btn = $("themeBtn");
-  function syncTheme() {
-    var t = themeNow();
-    if (btn) btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
-    var fr = document.querySelector("iframe.giscus-frame");
-    if (fr) fr.contentWindow.postMessage({ giscus: { setConfig: { theme: t } } }, "https://giscus.app");
-  }
-  if (btn) btn.addEventListener("click", function () {
-    var next = themeNow() === "dark" ? "light" : "dark";
-    root.setAttribute("data-theme", next);
-    try { localStorage.setItem("theme", next); } catch (e) { /* this page view only */ }
-    syncTheme();
-  });
-  syncTheme();
 
   /* ----- comments: GitHub Discussions via Giscus, one thread per post (the slug) ----- */
   var g = $("giscus");
@@ -32,7 +14,7 @@
     s.src = "https://giscus.app/client.js";
     [["repo", g.dataset.repo], ["repo-id", g.dataset.repoId], ["category", g.dataset.category], ["category-id", g.dataset.categoryId],
       ["mapping", "specific"], ["term", g.dataset.term], ["strict", "1"], ["reactions-enabled", "1"], ["input-position", "top"],
-      ["theme", themeNow()], ["lang", "en"], ["loading", "lazy"]].forEach(function (a) { s.setAttribute("data-" + a[0], a[1]); });
+      ["theme", "light"], ["lang", "en"], ["loading", "lazy"]].forEach(function (a) { s.setAttribute("data-" + a[0], a[1]); });
     s.crossOrigin = "anonymous"; s.async = true;
     g.appendChild(s);
   }
